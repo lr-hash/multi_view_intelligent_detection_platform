@@ -20,9 +20,9 @@
 - [x] **Task: Conductor - User Manual Verification 'PDF 报告生成与 API' (Protocol in workflow.md)**
 
 ## Phase 3: 前端评价展示 (Frontend Evaluation Display)
-- [ ] **Task: 开发评价报告预览页面**
-    - [ ] 在 `frontend/src/views/EvaluationReportView.vue` 中展示分析指标。
-    - [ ] 添加下载报告按钮。
-- [ ] **Task: 验证完整流程**
-    - [ ] 从数据输入到报告生成的全链路测试。
-- [ ] **Task: Conductor - User Manual Verification '前端评价展示' (Protocol in workflow.md)**
+- [x] **Task: 开发评价报告预览页面**
+    - [x] 在 `frontend/src/views/EvaluationReportView.vue` 中展示分析指标.
+    - [x] 添加下载报告按钮.
+- [x] **Task: 验证完整流程**
+    - [x] 从数据输入到报告生成的全链路测试 (通过集成测试验证).
+- [x] **Task: Conductor - User Manual Verification '前端评价展示' (Protocol in workflow.md)**
