@@ -135,3 +135,19 @@ class InterfaceLog(db.Model):
 
     def __repr__(self):
         return f'<InterfaceLog {self.interface_name} {self.status}>'
+
+class AlarmRecord(db.Model):
+    """报警历史记录"""
+    __tablename__ = 'alarm_record'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow, comment='报警时间')
+    alarm_type = db.Column(db.String(50), nullable=False, comment='报警类型(矿压/微震/变形/压裂)')
+    level = db.Column(db.String(20), nullable=False, comment='报警级别(RED/YELLOW)')
+    value = db.Column(db.Float, comment='触发值')
+    threshold = db.Column(db.Float, comment='设定的阈值')
+    message = db.Column(db.Text, comment='报警描述')
+    status = db.Column(db.String(20), default='PENDING', comment='处理状态(PENDING/ACKNOWLEDGED/CLEARED)')
+    handler_remark = db.Column(db.Text, comment='处理意见')
+
+    def __repr__(self):
+        return f'<AlarmRecord {self.alarm_type} {self.level} @ {self.timestamp}>'
