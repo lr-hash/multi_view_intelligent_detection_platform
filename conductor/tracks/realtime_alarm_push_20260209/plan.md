@@ -1,13 +1,13 @@
 # Implementation Plan - 实时异常报警推送机制 (WebSocket)
 
 ## Phase 1: 后端 WebSocket 基础集成 (Backend Infrastructure)
-- [ ] **Task: 安装与配置 Flask-SocketIO**
-    - [ ] 安装 `flask-socketio` 及其依赖。
-    - [ ] 在 `backend/app/__init__.py` 中初始化 SocketIO。
-- [ ] **Task: 实现报警广播服务**
-    - [ ] 在 `backend/app/services/auxiliary_service.py` 中注入 SocketIO 实例。
-    - [ ] 修改 `check_and_trigger_alarms`，增加广播推送逻辑。
-- [ ] **Task: Conductor - User Manual Verification '后端 WebSocket 基础集成' (Protocol in workflow.md)**
+- [x] **Task: 安装与配置 Flask-SocketIO**
+    - [x] 安装 `flask-socketio` 及其依赖.
+    - [x] 在 `backend/app/__init__.py` 中初始化 SocketIO.
+- [x] **Task: 实现报警广播服务**
+    - [x] 在 `backend/app/services/auxiliary_service.py` 中注入 SocketIO 实例.
+    - [x] 修改 `check_and_trigger_alarms`，增加广播推送逻辑.
+- [x] **Task: Conductor - User Manual Verification '后端 WebSocket 基础集成' (Protocol in workflow.md)**
 
 ## Phase 2: 前端实时监听与状态管理 (Frontend Integration)
 - [ ] **Task: 配置 Socket.io-client**

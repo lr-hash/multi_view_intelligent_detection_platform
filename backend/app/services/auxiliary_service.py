@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import random
-from app import db
+from app import db, socketio
 from app.models import AlarmRecord, SupportPressureData, MicroseismicEvent, RoadwayDeformation, FractureConstructionData, SystemConfig
 
 def get_system_config(key, default=None):
@@ -57,6 +57,19 @@ def check_and_trigger_alarms(data_type, value, threshold_red, threshold_yellow):
             db.session.add(alarm)
             db.session.commit()
             print(f"ALARM TRIGGERED: {msg}")
+            
+            # WebSocket 推送
+            alarm_data = {
+                "id": alarm.id,
+                "timestamp": alarm.timestamp.isoformat(),
+                "type": alarm.alarm_type,
+                "level": alarm.level,
+                "value": alarm.value,
+                "threshold": alarm.threshold,
+                "message": alarm.message
+            }
+            socketio.emit('new_alarm', alarm_data)
+            
             return True, level
         except Exception as e:
             db.session.rollback()
