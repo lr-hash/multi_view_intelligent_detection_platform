@@ -1,0 +1,28 @@
+# Implementation Plan - 报警历史与多维数据查询
+
+## Phase 1: 报警记录服务 (Alarm Record Service)
+- [ ] **Task: 完善报警模型与迁移**
+    - [ ] 在 `backend/app/models.py` 中定义 `AlarmRecord`。
+    - [ ] 执行数据库迁移。
+- [ ] **Task: 实现报警触发逻辑**
+    - [ ] 在 `backend/app/services/auxiliary_service.py` 中编写 `check_and_trigger_alarms`。
+    - [ ] 在数据接入流程中集成报警检查。
+- [ ] **Task: 编写报警功能测试**
+    - [ ] 模拟超限数据输入，验证报警表是否有记录。
+- [ ] **Task: Conductor - User Manual Verification '报警记录服务' (Protocol in workflow.md)**
+
+## Phase 2: 后端综合查询引擎 (Backend Data Query Engine)
+- [ ] **Task: 实现多维查询服务**
+    - [ ] 在 `backend/app/services/auxiliary_service.py` 中实现通用的数据检索逻辑。
+- [ ] **Task: 定义查询接口**
+    - [ ] 在 `backend/app/api/auxiliary.py` 中暴露 `/query` 接口。
+- [ ] **Task: 编写查询 API 测试**
+    - [ ] 验证各种组合过滤条件的正确性。
+- [ ] **Task: Conductor - User Manual Verification '后端综合查询引擎' (Protocol in workflow.md)**
+
+## Phase 3: 前端查询与展示 (Frontend Views)
+- [ ] **Task: 开发报警历史页面**
+    - [ ] 实现 `AlarmHistoryView.vue`。
+- [ ] **Task: 开发综合查询页面**
+    - [ ] 实现 `DataQueryView.vue` 并集成高级过滤器。
+- [ ] **Task: Conductor - User Manual Verification '前端查询与展示' (Protocol in workflow.md)**
