@@ -1,0 +1,8 @@
+{
+  "track_id": "fracture_3d_visualization_20260209",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-02-09T13:00:00Z",
+  "updated_at": "2026-02-09T13:00:00Z",
+  "description": "实现压裂段的 3D 渲染，并根据压力、流量数据动态映射视觉效果（大小、颜色）。"
+}
