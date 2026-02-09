@@ -4,12 +4,12 @@
 - [x] **Task: 完善报警模型与迁移**
     - [x] 在 `backend/app/models.py` 中定义 `AlarmRecord`.
     - [x] 执行数据库迁移.
-- [ ] **Task: 实现报警触发逻辑**
-    - [ ] 在 `backend/app/services/auxiliary_service.py` 中编写 `check_and_trigger_alarms`。
-    - [ ] 在数据接入流程中集成报警检查。
-- [ ] **Task: 编写报警功能测试**
-    - [ ] 模拟超限数据输入，验证报警表是否有记录。
-- [ ] **Task: Conductor - User Manual Verification '报警记录服务' (Protocol in workflow.md)**
+- [x] **Task: 实现报警触发逻辑**
+    - [x] 在 `backend/app/services/auxiliary_service.py` 中编写 `check_and_trigger_alarms`.
+    - [x] 在数据接入流程中集成报警检查.
+- [x] **Task: 编写报警功能测试**
+    - [x] 模拟超限数据输入，验证报警表是否有记录.
+- [x] **Task: Conductor - User Manual Verification '报警记录服务' (Protocol in workflow.md)**
 
 ## Phase 2: 后端综合查询引擎 (Backend Data Query Engine)
 - [ ] **Task: 实现多维查询服务**
