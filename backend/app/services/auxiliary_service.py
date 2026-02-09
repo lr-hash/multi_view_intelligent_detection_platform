@@ -65,16 +65,60 @@ def get_alarm_history(limit=50):
         } for r in records
     ]
 
+from app.models import AlarmRecord, SupportPressureData, MicroseismicEvent, RoadwayDeformation, FractureConstructionData
+
 def query_data(params):
     """
-    5.5.2.1 多条件查询
+    通用多维数据查询服务。
+    params: {
+        "target": "pressure" | "seismic" | "deformation" | "fracture" | "alarm",
+        "start_time": iso_str,
+        "end_time": iso_str,
+        "filters": { "key": "value" },
+        "limit": int
+    }
     """
-    print(f"SERVICE: Querying data with params: {params} (simulated).")
-    # Simulate a database query
-    return [
-        {"timestamp": "2026-02-02 23:00:00", "sensor_id": "P1_045", "value": 34.5},
-        {"timestamp": "2026-02-02 23:00:05", "sensor_id": "P1_046", "value": 35.1},
-    ]
+    target = params.get('target')
+    start_time = params.get('start_time')
+    end_time = params.get('end_time')
+    limit = params.get('limit', 100)
+    
+    # 映射目标到模型类和时间字段名
+    mapping = {
+        "pressure": (SupportPressureData, "record_time"),
+        "seismic": (MicroseismicEvent, "event_time"),
+        "deformation": (RoadwayDeformation, "record_time"),
+        "fracture": (FractureConstructionData, "record_time"),
+        "alarm": (AlarmRecord, "timestamp")
+    }
+    
+    if target not in mapping:
+        return {"error": f"Invalid query target: {target}"}
+        
+    model_class, time_field_name = mapping[target]
+    query = model_class.query
+    
+    # 时间过滤
+    time_field = getattr(model_class, time_field_name)
+    if start_time:
+        query = query.filter(time_field >= datetime.fromisoformat(start_time))
+    if end_time:
+        query = query.filter(time_field <= datetime.fromisoformat(end_time))
+        
+    # 执行查询
+    records = query.order_by(time_field.desc()).limit(limit).all()
+    
+    # 简单序列化 (实际应根据具体模型定义 serialize 方法)
+    results = []
+    for r in records:
+        data = {c.name: getattr(r, c.name) for c in r.__table__.columns}
+        # 格式化 datetime 字段
+        for k, v in data.items():
+            if isinstance(v, datetime):
+                data[k] = v.isoformat()
+        results.append(data)
+        
+    return results
 
 def get_system_logs(level='INFO', limit=100):
     """

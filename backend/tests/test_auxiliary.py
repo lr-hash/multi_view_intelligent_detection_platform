@@ -28,3 +28,23 @@ def test_get_alarm_history(app):
     history = get_alarm_history()
     assert len(history) >= 2
     assert history[0]['type'] == "TestType"
+
+def test_query_api(client, app):
+    """测试多条件查询 API"""
+    # 注入一条矿压数据
+    from app.models import SupportPressureData
+    from datetime import datetime
+    with app.app_context():
+        db.session.add(SupportPressureData(support_no=999, p1=30.0, record_time=datetime.fromisoformat("2026-02-09T10:00:00")))
+        db.session.commit()
+        
+    payload = {
+        "target": "pressure",
+        "start_time": "2026-02-09T09:00:00",
+        "end_time": "2026-02-09T11:00:00"
+    }
+    response = client.post('/api/v1/query', json=payload)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data) >= 1
+    assert data[0]['support_no'] == 999

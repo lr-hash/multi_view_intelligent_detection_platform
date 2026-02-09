@@ -12,13 +12,13 @@
 - [x] **Task: Conductor - User Manual Verification '报警记录服务' (Protocol in workflow.md)**
 
 ## Phase 2: 后端综合查询引擎 (Backend Data Query Engine)
-- [ ] **Task: 实现多维查询服务**
-    - [ ] 在 `backend/app/services/auxiliary_service.py` 中实现通用的数据检索逻辑。
-- [ ] **Task: 定义查询接口**
-    - [ ] 在 `backend/app/api/auxiliary.py` 中暴露 `/query` 接口。
-- [ ] **Task: 编写查询 API 测试**
-    - [ ] 验证各种组合过滤条件的正确性。
-- [ ] **Task: Conductor - User Manual Verification '后端综合查询引擎' (Protocol in workflow.md)**
+- [x] **Task: 实现多维查询服务**
+    - [x] 在 `backend/app/services/auxiliary_service.py` 中实现通用的数据检索逻辑.
+- [x] **Task: 定义查询接口**
+    - [x] 在 `backend/app/api/auxiliary.py` 中暴露 `/query` 接口.
+- [x] **Task: 编写查询 API 测试**
+    - [x] 验证各种组合过滤条件的正确性.
+- [x] **Task: Conductor - User Manual Verification '后端综合查询引擎' (Protocol in workflow.md)**
 
 ## Phase 3: 前端查询与展示 (Frontend Views)
 - [ ] **Task: 开发报警历史页面**
