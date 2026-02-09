@@ -10,16 +10,16 @@
 - [x] **Task: 编写模型单元测试**
     - [x] 在 `backend/tests/test_models.py` 中编写针对新模型的 CRUD 测试。
     - [x] 运行测试并确保通过。
-- [ ] **Task: Conductor - User Manual Verification '数据库模型扩展' (Protocol in workflow.md)**
+- [x] **Task: Conductor - User Manual Verification '数据库模型扩展' (Protocol in workflow.md)**
 
 ## Phase 2: 集成服务逻辑实现 (Integration Service Implementation)
-- [ ] **Task: 完善数据接入逻辑**
-    - [ ] 在 `backend/app/services/integration_service.py` 中实现 `save_kj653_data` 的实际存储逻辑。
-    - [ ] 在 `backend/app/services/integration_service.py` 中实现 `save_sos_data` 的实际存储逻辑。
-- [ ] **Task: 实现接口状态与日志查询**
-    - [ ] 实现 `get_all_interface_statuses` 真实逻辑。
-    - [ ] 实现 `get_all_interface_logs` 真实逻辑（基于 `InterfaceLog` 表）。
-- [ ] **Task: 编写集成测试**
-    - [ ] 在 `backend/tests/test_api_integration.py` 中编写接口测试，模拟 POST 请求发送监测数据。
-    - [ ] 确保数据正确存入数据库且日志表有记录。
-- [ ] **Task: Conductor - User Manual Verification '集成服务逻辑实现' (Protocol in workflow.md)**
+- [x] **Task: 完善数据接入逻辑**
+    - [x] 在 `backend/app/services/integration_service.py` 中实现 `save_kj653_data` 的实际存储逻辑.
+    - [x] 在 `backend/app/services/integration_service.py` 中实现 `save_sos_data` 的实际存储逻辑.
+- [x] **Task: 实现接口状态与日志查询**
+    - [x] 实现 `get_all_interface_statuses` 真实逻辑.
+    - [x] 实现 `get_all_interface_logs` 真实逻辑（基于 `InterfaceLog` 表）.
+- [x] **Task: 编写集成测试**
+    - [x] 在 `backend/tests/test_api_integration.py` 中编写接口测试，模拟 POST 请求发送监测数据.
+    - [x] 确保数据正确存入数据库且日志表有记录.
+- [x] **Task: Conductor - User Manual Verification '集成服务逻辑实现' (Protocol in workflow.md)**

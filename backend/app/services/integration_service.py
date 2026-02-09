@@ -1,60 +1,106 @@
+import json
 from app import db
-from app.models import SupportPressureData, MicroseismicEvent
+from app.models import SupportPressureData, MicroseismicEvent, InterfaceLog
+from datetime import datetime
+
+def _log_interface_call(name, status, message, payload=None):
+    """辅助函数：记录接口调用日志"""
+    try:
+        log = InterfaceLog(
+            interface_name=name,
+            status=status,
+            message=message,
+            payload=json.dumps(payload) if payload else None
+        )
+        db.session.add(log)
+        db.session.commit()
+    except Exception as e:
+        print(f"FAILED TO LOG: {e}")
 
 def save_kj653_data(data):
     """
     Saves KJ653 data to the database.
-    This is a placeholder and should be expanded with actual data mapping.
+    Expects data format: {"records": [...list of SupportPressureData fields...]}
     """
-    # Example: Create a new record from the incoming data
-    # This assumes the incoming `data` is a dictionary matching the model
     try:
-        # record = SupportPressureData(**data['raw_data_record'])
-        # db.session.add(record)
-        # db.session.commit()
-        print("SERVICE: Saving KJ653 data (simulated).")
-        return True, "Data saved successfully"
+        records = data.get('records', [])
+        count = 0
+        for r in records:
+            # 转换时间字符串为 datetime 对象 (假设输入是 ISO 格式)
+            if 'record_time' in r and isinstance(r['record_time'], str):
+                r['record_time'] = datetime.fromisoformat(r['record_time'])
+            
+            new_record = SupportPressureData(**r)
+            db.session.add(new_record)
+            count += 1
+        
+        db.session.commit()
+        msg = f"Successfully saved {count} KJ653 records."
+        _log_interface_call("KJ653_API", "SUCCESS", msg)
+        return True, msg
     except Exception as e:
-        # db.session.rollback()
-        return False, str(e)
+        db.session.rollback()
+        err_msg = f"KJ653 Save Error: {str(e)}"
+        _log_interface_call("KJ653_API", "ERROR", err_msg, payload=data)
+        return False, err_msg
 
 def save_sos_data(data):
     """
     Saves SOS data to the database.
-    This is a placeholder and should be expanded with actual data mapping.
+    Expects data format: {"events": [...list of MicroseismicEvent fields...]}
     """
     try:
-        # event = MicroseismicEvent(**data['payload'])
-        # db.session.add(event)
-        # db.session.commit()
-        print("SERVICE: Saving SOS data (simulated).")
-        return True, "Data saved successfully"
+        events = data.get('events', [])
+        count = 0
+        for e in events:
+            if 'event_time' in e and isinstance(e['event_time'], str):
+                e['event_time'] = datetime.fromisoformat(e['event_time'])
+            
+            new_event = MicroseismicEvent(**e)
+            db.session.add(new_event)
+            count += 1
+            
+        db.session.commit()
+        msg = f"Successfully saved {count} SOS events."
+        _log_interface_call("SOS_API", "SUCCESS", msg)
+        return True, msg
     except Exception as e:
-        # db.session.rollback()
-        return False, str(e)
+        db.session.rollback()
+        err_msg = f"SOS Save Error: {str(e)}"
+        _log_interface_call("SOS_API", "ERROR", err_msg, payload=data)
+        return False, err_msg
 
 def get_all_interface_statuses():
     """
-    Checks and returns the status of all data interfaces.
+    Checks and returns the status of all data interfaces by checking the last update time.
     """
-    # This is a placeholder. In a real application, this would involve
-    # checking database connection health, last data timestamp, etc.
-    print("SERVICE: Checking interface statuses (simulated).")
-    return {
-        "KJ653_DB": { "status": "Online", "details": "Last data received 5s ago." },
-        "SOS_DB": { "status": "Online", "details": "Last data received 2s ago." },
-        "FRACTURE_DB": { "status": "Offline", "details": "No data received for 15 minutes." }
-    }
+    interfaces = ["KJ653_API", "SOS_API"]
+    results = {}
+    
+    for name in interfaces:
+        last_log = InterfaceLog.query.filter_by(interface_name=name).order_by(InterfaceLog.timestamp.desc()).first()
+        if last_log:
+            results[name] = {
+                "status": "Online" if last_log.status == "SUCCESS" else "Error",
+                "details": f"Last sync: {last_log.timestamp.isoformat()}, Message: {last_log.message}"
+            }
+        else:
+            results[name] = { "status": "Unknown", "details": "No logs found for this interface." }
+            
+    return results
 
 def get_all_interface_logs(limit=100):
     """
-    Retrieves the latest interface logs.
+    Retrieves the latest interface logs from the database.
     """
-    # This is a placeholder. It would query a dedicated logging table.
-    print(f"SERVICE: Retrieving latest {limit} interface logs (simulated).")
+    logs = InterfaceLog.query.order_by(InterfaceLog.timestamp.desc()).limit(limit).all()
     return [
-        {"timestamp": "2026-02-02 22:55:01", "interface": "KJ653_DB", "status": "SUCCESS", "message": "Received 32 records."},
-        {"timestamp": "2026-02-02 22:55:03", "interface": "SOS_DB", "status": "SUCCESS", "message": "Received 1 event."},
+        {
+            "timestamp": log.timestamp.isoformat(),
+            "interface": log.interface_name,
+            "status": log.status,
+            "message": log.message
+        } for log in logs
     ]
 
 def get_interface_configurations():
