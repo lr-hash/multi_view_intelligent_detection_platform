@@ -34,6 +34,12 @@ const api = {
   getInterfaceLogs() {
     return apiClient.get('/interfaces/logs');
   },
+  getInterfaceConfig() {
+    return apiClient.get('/interfaces/config');
+  },
+  saveInterfaceConfig(config) {
+    return apiClient.post('/interfaces/config', config);
+  },
 
   // 5.3 可视化模块
   getDashboardCoreMetrics() {
@@ -63,6 +69,12 @@ const api = {
   // 5.5 辅助功能模块
   getAlarmHistory() {
     return apiClient.get('/alarms/history');
+  },
+  getAlarmConfig() {
+    return apiClient.get('/alarms/config');
+  },
+  saveAlarmConfig(config) {
+    return apiClient.post('/alarms/config', config);
   },
   queryData(params) {
     return apiClient.post('/query', params);

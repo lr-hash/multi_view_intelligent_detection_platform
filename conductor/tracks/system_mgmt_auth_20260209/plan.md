@@ -12,13 +12,13 @@
 - [ ] **Task: Conductor - User Manual Verification '身份验证体系' (Protocol in workflow.md)**
 
 ## Phase 2: 系统动态配置服务 (System Dynamic Configuration)
-- [ ] **Task: 建立配置表模型**
-    - [ ] 在 `models.py` 中添加 `SystemConfig` 类（键值对存储）。
-- [ ] **Task: 实现配置 CRUD 接口**
-    - [ ] 实现获取和更新系统参数的 API 接口。
-- [ ] **Task: 联动报警与集成逻辑**
-    - [ ] 修改 `auxiliary_service.py` 使其从数据库读取阈值而非模拟。
-- [ ] **Task: Conductor - User Manual Verification '系统动态配置服务' (Protocol in workflow.md)**
+- [x] **Task: 建立配置表模型**
+    - [x] 在 `models.py` 中添加 `SystemConfig` 类（键值对存储）.
+- [x] **Task: 实现配置 CRUD 接口**
+    - [x] 实现获取和更新系统参数的 API 接口.
+- [x] **Task: 联动报警与集成逻辑**
+    - [x] 修改 `auxiliary_service.py` 使其从数据库读取阈值而非模拟.
+- [x] **Task: Conductor - User Manual Verification '系统动态配置服务' (Protocol in workflow.md)**
 
 ## Phase 3: 前端管理视图 (Frontend Admin Views)
 - [ ] **Task: 开发登录与重定向**
