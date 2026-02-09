@@ -1,0 +1,8 @@
+{
+  "track_id": "system_mgmt_auth_20260209",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-02-09T14:30:00Z",
+  "updated_at": "2026-02-09T14:30:00Z",
+  "description": "实现身份验证 (JWT)、角色权限控制以及系统配置管理功能。"
+}
