@@ -10,12 +10,12 @@
 - [x] **Task: Conductor - User Manual Verification '后端 WebSocket 基础集成' (Protocol in workflow.md)**
 
 ## Phase 2: 前端实时监听与状态管理 (Frontend Integration)
-- [ ] **Task: 配置 Socket.io-client**
-    - [ ] 安装 `socket.io-client` 依赖。
-    - [ ] 创建 `frontend/src/services/websocket.js` 管理连接。
-- [ ] **Task: 实现全局报警通知组件**
-    - [ ] 在 `App.vue` 中集成连接逻辑并引入通知弹窗组件。
-- [ ] **Task: Conductor - User Manual Verification '前端实时监听与状态管理' (Protocol in workflow.md)**
+- [x] **Task: 配置 Socket.io-client**
+    - [x] 安装 `socket.io-client` 依赖.
+    - [x] 创建 `frontend/src/services/websocket.js` 管理连接.
+- [x] **Task: 实现全局报警通知组件**
+    - [x] 在 `App.vue` 中集成连接逻辑并引入通知弹窗组件.
+- [x] **Task: Conductor - User Manual Verification '前端实时监听与状态管理' (Protocol in workflow.md)**
 
 ## Phase 3: 优化与安全性增强 (Enhancements & Security)
 - [ ] **Task: 实现 WebSocket 身份验证**

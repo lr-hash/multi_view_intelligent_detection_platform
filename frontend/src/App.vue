@@ -1,7 +1,9 @@
 <script setup>
 import { RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
-import { computed } from 'vue';
+import { computed, watch, onMounted } from 'vue';
+import websocket from '@/services/websocket';
+import AlarmNotification from '@/components/AlarmNotification.vue';
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -10,7 +12,23 @@ const isLoginPage = computed(() => route.name === 'login');
 
 function handleLogout() {
   authStore.logout();
+  websocket.disconnect();
 }
+
+// Watch for authentication changes to manage WebSocket connection
+watch(() => authStore.isAuthenticated, (isAuthenticated) => {
+  if (isAuthenticated) {
+    websocket.connect();
+  } else {
+    websocket.disconnect();
+  }
+});
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    websocket.connect();
+  }
+});
 </script>
 
 <template>
@@ -34,6 +52,7 @@ function handleLogout() {
   </header>
 
   <main :class="{ 'full-page': isLoginPage }">
+    <AlarmNotification />
     <RouterView />
   </main>
 </template>
