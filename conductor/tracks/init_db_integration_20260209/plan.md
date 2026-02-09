@@ -4,9 +4,9 @@
 - [x] **Task: 定义压裂施工与日志模型**
     - [x] 在 `backend/app/models.py` 中添加 `FractureConstructionData` 类。
     - [x] 在 `backend/app/models.py` 中添加 `InterfaceLog` 类。
-- [ ] **Task: 执行数据库迁移**
-    - [ ] 运行 `flask db migrate -m "Add fracture and log models"`。
-    - [ ] 运行 `flask db upgrade`。
+- [x] **Task: 执行数据库迁移**
+    - [x] 运行 `flask db migrate -m "Add fracture and log models"`。
+    - [x] 运行 `flask db upgrade`。
 - [ ] **Task: 编写模型单元测试**
     - [ ] 在 `backend/tests/test_models.py` 中编写针对新模型的 CRUD 测试。
     - [ ] 运行测试并确保通过。
