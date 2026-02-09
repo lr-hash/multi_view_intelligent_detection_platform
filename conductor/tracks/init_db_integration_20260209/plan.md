@@ -1,9 +1,9 @@
 # Implementation Plan - 初始化数据库架构与多源数据集成接口
 
 ## Phase 1: 数据库模型扩展 (Database Schema Expansion)
-- [ ] **Task: 定义压裂施工与日志模型**
-    - [ ] 在 `backend/app/models.py` 中添加 `FractureConstructionData` 类。
-    - [ ] 在 `backend/app/models.py` 中添加 `InterfaceLog` 类。
+- [x] **Task: 定义压裂施工与日志模型**
+    - [x] 在 `backend/app/models.py` 中添加 `FractureConstructionData` 类。
+    - [x] 在 `backend/app/models.py` 中添加 `InterfaceLog` 类。
 - [ ] **Task: 执行数据库迁移**
     - [ ] 运行 `flask db migrate -m "Add fracture and log models"`。
     - [ ] 运行 `flask db upgrade`。

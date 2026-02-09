@@ -107,3 +107,31 @@ class RoadwayDeformation(db.Model):
 
     def __repr__(self):
         return f'<RoadwayDeformation {self.station_id} {self.top_bottom_deformation}mm>'
+
+class FractureConstructionData(db.Model):
+    """压裂施工实时数据"""
+    __tablename__ = 'fracture_construction_data'
+    id = db.Column(db.Integer, primary_key=True)
+    record_time = db.Column(db.DateTime, index=True, default=datetime.utcnow, comment='记录时间')
+    borehole_id = db.Column(db.Integer, db.ForeignKey('borehole.id'), nullable=False, comment='所属钻孔ID')
+    segment_no = db.Column(db.Integer, comment='压裂段号')
+    pressure = db.Column(db.Float, comment='施工压力(MPa)')
+    flow_rate = db.Column(db.Float, comment='瞬时流量(m3/min)')
+    total_volume = db.Column(db.Float, comment='累计排量(m3)')
+    sand_concentration = db.Column(db.Float, comment='砂浓度(kg/m3)')
+
+    def __repr__(self):
+        return f'<FractureConstructionData {self.borehole_id} Seg {self.segment_no}>'
+
+class InterfaceLog(db.Model):
+    """接口调用日志"""
+    __tablename__ = 'interface_log'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow, comment='日志时间')
+    interface_name = db.Column(db.String(100), nullable=False, comment='接口名称/来源')
+    status = db.Column(db.String(20), nullable=False, comment='状态(SUCCESS/ERROR)')
+    message = db.Column(db.Text, comment='详细消息')
+    payload = db.Column(db.Text, comment='原始数据载荷(可选)')
+
+    def __repr__(self):
+        return f'<InterfaceLog {self.interface_name} {self.status}>'
