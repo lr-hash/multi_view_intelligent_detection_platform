@@ -1,13 +1,15 @@
 from . import bp
 from flask import jsonify, request
 from app.services import processing_service
+from .auth import token_required
 
 #==============================================================================
 # 5.2 数据处理模块
 #==============================================================================
 
 @bp.route('/processing/validate', methods=['POST'])
-def validate_data_endpoint():
+@token_required
+def validate_data_endpoint(current_user):
     """
     Endpoint to trigger data validation.
     Expects data and a source identifier in the request body.
@@ -24,7 +26,8 @@ def validate_data_endpoint():
         return jsonify({"status": "error", "message": message}), 422 # Unprocessable Entity
 
 @bp.route('/processing/standardize', methods=['POST'])
-def standardize_data_endpoint():
+@token_required
+def standardize_data_endpoint(current_user):
     """
     Endpoint to trigger data alignment and standardization.
     """
@@ -34,7 +37,8 @@ def standardize_data_endpoint():
 
 
 @bp.route('/processing/fuse', methods=['POST'])
-def fuse_data_endpoint():
+@token_required
+def fuse_data_endpoint(current_user):
     """
     Endpoint to trigger data fusion.
     Expects JSON: {"pressure": float, "seismic": float, "deformation": float}

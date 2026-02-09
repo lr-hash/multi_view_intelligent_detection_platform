@@ -1,6 +1,7 @@
 from . import bp
 from flask import jsonify, request, send_file
 from app.services import evaluation_service
+from .auth import token_required
 import io
 
 #==============================================================================
@@ -8,7 +9,8 @@ import io
 #==============================================================================
 
 @bp.route('/evaluation/compare/<int:borehole_id>', methods=['GET'])
-def get_comparison_endpoint(borehole_id):
+@token_required
+def get_comparison_endpoint(current_user, borehole_id):
     """
     5.4.1 数据对比分析
     Provides pre- and post-fracturing data for a specific data type.
@@ -22,7 +24,8 @@ def get_comparison_endpoint(borehole_id):
     return jsonify(data)
 
 @bp.route('/evaluation/indices/<int:borehole_id>', methods=['GET'])
-def get_indices_endpoint(borehole_id):
+@token_required
+def get_indices_endpoint(current_user, borehole_id):
     """
     5.4.2 评价指标计算
     Provides calculated evaluation indices for a borehole.
@@ -31,7 +34,8 @@ def get_indices_endpoint(borehole_id):
     return jsonify(data)
 
 @bp.route('/evaluation/report/<int:borehole_id>', methods=['GET'])
-def get_report_endpoint(borehole_id):
+@token_required
+def get_report_endpoint(current_user, borehole_id):
     """
     5.4.3 评价报告生成 (JSON 概要)
     """
@@ -39,7 +43,8 @@ def get_report_endpoint(borehole_id):
     return jsonify(metrics)
 
 @bp.route('/evaluation/report/<int:borehole_id>/download', methods=['GET'])
-def download_report_pdf(borehole_id):
+@token_required
+def download_report_pdf(current_user, borehole_id):
     """
     下载 PDF 版本的评价报告
     """

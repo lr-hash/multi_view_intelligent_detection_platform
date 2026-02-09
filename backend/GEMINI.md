@@ -8,4 +8,4 @@ This module contains the backend application, built with Flask.
 -   **Data Integration**: Includes interfaces to connect with external monitoring systems (KJ653, SOS, etc.).
 -   **Data Processing**: Implements logic for data validation, cleaning, and standardization.
 -   **Data Analysis & Fusion**: Contains algorithms for multi-source data fusion and calculation of evaluation metrics.
--   **Database Management**: Defines the database schema and handles all database interactions.
+-   **Database Management**: Handles PostgreSQL for structured data and Redis for real-time buffering and alignment.

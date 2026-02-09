@@ -1,8 +1,0 @@
-{
-  "track_id": "alarm_history_query_20260209",
-  "type": "feature",
-  "status": "new",
-  "created_at": "2026-02-09T14:15:00Z",
-  "updated_at": "2026-02-09T14:15:00Z",
-  "description": "实现报警记录持久化、历史查询以及监测数据的综合多条件查询功能。"
-}

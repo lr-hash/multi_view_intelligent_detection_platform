@@ -1,13 +1,15 @@
 from flask import request, jsonify
 from . import bp
 from app.services import integration_service
+from .auth import token_required
 
 #==============================================================================
 # 5.1 集成接口模块
 #==============================================================================
 
 @bp.route('/ingest/kj653', methods=['POST'])
-def ingest_kj653_data():
+@token_required
+def ingest_kj653_data(current_user):
     """
     5.1.1 (1) KJ653 煤矿顶板动态监测系统对接接口
     """
@@ -19,7 +21,8 @@ def ingest_kj653_data():
         return jsonify({'status': 'error', 'message': message}), 500
 
 @bp.route('/ingest/sos', methods=['POST'])
-def ingest_sos_data():
+@token_required
+def ingest_sos_data(current_user):
     """
     5.1.1 (2) SOS 微震系统对接接口
     """
@@ -31,7 +34,8 @@ def ingest_sos_data():
         return jsonify({'status': 'error', 'message': message}), 500
 
 @bp.route('/interfaces/status', methods=['GET'])
-def get_interface_status():
+@token_required
+def get_interface_status(current_user):
     """
     5.1.2 (1) 接口状态监测
     """
@@ -39,7 +43,8 @@ def get_interface_status():
     return jsonify(statuses)
 
 @bp.route('/interfaces/logs', methods=['GET'])
-def get_interface_logs():
+@token_required
+def get_interface_logs(current_user):
     """
     5.1.2 (2) 接口日志记录
     """
@@ -48,11 +53,16 @@ def get_interface_logs():
     return jsonify(logs)
 
 @bp.route('/interfaces/config', methods=['GET', 'POST'])
-def manage_interface_config():
+@token_required
+def manage_interface_config(current_user):
     """
     5.1.2 (3) 接口参数配置
     """
     if request.method == 'POST':
+        # 仅限管理员修改配置
+        if current_user.role != 'ADMIN':
+            return jsonify({'message': 'Admin privilege required!'}), 403
+            
         config_data = request.json
         integration_service.save_interface_configurations(config_data)
         return jsonify({'status': 'success', 'message': 'Configuration saved.'})

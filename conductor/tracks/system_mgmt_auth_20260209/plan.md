@@ -1,14 +1,14 @@
 # Implementation Plan - 系统管理、权限控制与配置界面
 
 ## Phase 1: 身份验证体系 (Authentication Framework)
-- [ ] **Task: 实现 JWT 登录与拦截**
-    - [ ] 在 `backend/app/api/auth.py` 中完善登录逻辑。
-    - [ ] 实现 `@auth_required` 装饰器用于保护 API。
-- [ ] **Task: 完善前端权限状态管理**
-    - [ ] 在 `frontend/src/store/auth.js` 中完善 Pinia 状态。
-    - [ ] 实现 axios 请求拦截器自动注入 Token。
-- [ ] **Task: 编写认证流程测试**
-    - [ ] 验证登录流程及受保护接口的访问限制。
+- [x] **Task: 实现 JWT 登录与拦截**
+    - [x] 在 `backend/app/api/auth.py` 中完善登录逻辑.
+    - [x] 实现 `@auth_required` 装饰器用于保护 API.
+- [x] **Task: 完善前端权限状态管理**
+    - [x] 在 `frontend/src/store/auth.js` 中完善 Pinia 状态.
+    - [x] 实现 axios 请求拦截器自动注入 Token.
+- [x] **Task: 编写认证流程测试**
+    - [x] 验证登录流程及受保护接口的访问限制.
 - [ ] **Task: Conductor - User Manual Verification '身份验证体系' (Protocol in workflow.md)**
 
 ## Phase 2: 系统动态配置服务 (System Dynamic Configuration)
