@@ -64,6 +64,50 @@ def generate_evaluation_report(borehole_id):
         "evaluation_indices": indices
     }
 
+from fpdf import FPDF
+import io
+
+def generate_pdf_report(borehole_id, metrics_data):
+    """
+    将评价指标渲染为 PDF 文件内容。
+    返回 bytes 流。
+    """
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # 标题 (使用核心字体，暂不支持中文除非加载 TTF)
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"Evaluation Report - Borehole #{borehole_id}", ln=True, align="C")
+    pdf.ln(10)
+    
+    # 基本信息
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, f"Generated At: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}", ln=True)
+    
+    # 映射中文 Level 为英文以支持默认字体
+    level_map = {"稳定": "Stable", "一般": "Normal", "危险": "Hazardous"}
+    eng_level = level_map.get(metrics_data['level'], "Unknown")
+    pdf.cell(0, 10, f"Stability Level: {eng_level}", ln=True)
+    pdf.ln(5)
+    
+    # 指标数据
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Key Performance Indicators", ln=True)
+    pdf.set_font("Arial", size=12)
+    
+    m = metrics_data['metrics']
+    pdf.cell(0, 10, f"- Pressure Reduction: {m['pressure_reduction']}%", ln=True)
+    pdf.cell(0, 10, f"- Deformation Control: {m['deformation_control']}%", ln=True)
+    pdf.cell(0, 10, f"- Overall Efficiency: {m['efficiency']}%", ln=True)
+    pdf.cell(0, 10, f"- Stability Index: {m['stability_index']}", ln=True)
+    
+    pdf.ln(10)
+    pdf.set_font("Arial", "I", 10)
+    pdf.multi_cell(0, 10, "Disclaimer: This report is generated automatically based on simulated multi-source monitoring data integration.")
+    
+    # 输出为 bytes
+    return pdf.output()
+
 def calculate_evaluation_metrics(borehole_id):
     """
     研发评价算法核心逻辑：量化计算压裂有效率和顶板稳定性。

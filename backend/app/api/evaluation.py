@@ -1,6 +1,7 @@
 from . import bp
-from flask import jsonify, request
+from flask import jsonify, request, send_file
 from app.services import evaluation_service
+import io
 
 #==============================================================================
 # 5.4 压裂效果评价模块
@@ -32,8 +33,22 @@ def get_indices_endpoint(borehole_id):
 @bp.route('/evaluation/report/<int:borehole_id>', methods=['GET'])
 def get_report_endpoint(borehole_id):
     """
-    5.4.3 评价报告生成
-    Generates and returns a full evaluation report.
+    5.4.3 评价报告生成 (JSON 概要)
     """
-    report = evaluation_service.generate_evaluation_report(borehole_id)
-    return jsonify(report)
+    metrics = evaluation_service.calculate_evaluation_metrics(borehole_id)
+    return jsonify(metrics)
+
+@bp.route('/evaluation/report/<int:borehole_id>/download', methods=['GET'])
+def download_report_pdf(borehole_id):
+    """
+    下载 PDF 版本的评价报告
+    """
+    metrics = evaluation_service.calculate_evaluation_metrics(borehole_id)
+    pdf_content = evaluation_service.generate_pdf_report(borehole_id, metrics)
+    
+    return send_file(
+        io.BytesIO(pdf_content),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'Report_Borehole_{borehole_id}.pdf'
+    )
