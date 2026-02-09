@@ -1,0 +1,109 @@
+from app import db
+from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+
+class User(db.Model):
+    """用户表"""
+    __tablename__ = 'user'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
+
+class DrillingSite(db.Model):
+    """钻场信息"""
+    __tablename__ = 'drilling_site'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, comment='钻场名称')
+    location = db.Column(db.String(200), comment='位置')
+    coord_e = db.Column(db.Float, comment='大地坐标东坐标')
+    coord_n = db.Column(db.Float, comment='大地坐标北坐标')
+    coord_z = db.Column(db.Float, comment='巷道标高')
+    boreholes = db.relationship('Borehole', backref='drilling_site', lazy='dynamic')
+
+    def __repr__(self):
+        return f'<DrillingSite {self.name}>'
+
+class Borehole(db.Model):
+    """钻孔信息"""
+    __tablename__ = 'borehole'
+    id = db.Column(db.Integer, primary_key=True)
+    drilling_site_id = db.Column(db.Integer, db.ForeignKey('drilling_site.id'), nullable=False, comment='所属钻场ID')
+    borehole_no = db.Column(db.String(50), nullable=False, comment='钻孔编号')
+    diameter = db.Column(db.Float, comment='孔径(mm)')
+    design_length = db.Column(db.Float, comment='设计长度(m)')
+    azimuth = db.Column(db.Float, comment='设计方位角')
+    dip_angle = db.Column(db.Float, comment='设计倾角')
+    segments = db.Column(db.Integer, comment='计划压裂段数')
+    trajectories = db.relationship('BoreholeTrajectory', backref='borehole', lazy='dynamic')
+
+    def __repr__(self):
+        return f'<Borehole {self.borehole_no}>'
+
+class BoreholeTrajectory(db.Model):
+    """钻孔轨迹"""
+    __tablename__ = 'borehole_trajectory'
+    id = db.Column(db.Integer, primary_key=True)
+    borehole_id = db.Column(db.Integer, db.ForeignKey('borehole.id'), nullable=False, comment='所属钻孔ID')
+    measured_depth = db.Column(db.Float, nullable=False, comment='测深(m)')
+    dip_angle = db.Column(db.Float, comment='倾角')
+    grid_azimuth = db.Column(db.Float, comment='方位角')
+    coord_e = db.Column(db.Float, comment='坐标E')
+    coord_n = db.Column(db.Float, comment='坐标N')
+    coord_z = db.Column(db.Float, comment='坐标Z')
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, comment='测量时间')
+
+    def __repr__(self):
+        return f'<BoreholeTrajectory {self.borehole_id} @ {self.measured_depth}m>'
+
+class SupportPressureData(db.Model):
+    """支架压力数据 (KJ653)"""
+    __tablename__ = 'support_pressure_data'
+    id = db.Column(db.Integer, primary_key=True)
+    record_time = db.Column(db.DateTime, index=True, default=datetime.utcnow, comment='记录时间')
+    station_no = db.Column(db.Integer, comment='测站号')
+    support_no = db.Column(db.Integer, comment='支架号')
+    position = db.Column(db.String(50), comment='位置')
+    p1 = db.Column(db.Float, comment='压力P1(MPa)')
+    p2 = db.Column(db.Float, comment='压力P2(MPa)')
+    p3 = db.Column(db.Float, comment='压力P3(MPa)')
+    angle_x = db.Column(db.Float, comment='X方向角度')
+    angle_y = db.Column(db.Float, comment='Y方向角度')
+    status = db.Column(db.String(50), comment='状态')
+
+    def __repr__(self):
+        return f'<SupportPressureData {self.support_no} {self.p1}MPa>'
+
+class MicroseismicEvent(db.Model):
+    """微震事件数据 (SOS)"""
+    __tablename__ = 'microseismic_event'
+    id = db.Column(db.Integer, primary_key=True)
+    event_time = db.Column(db.DateTime, index=True, default=datetime.utcnow, comment='事件时间')
+    coord_x = db.Column(db.Float, comment='X坐标')
+    coord_y = db.Column(db.Float, comment='Y坐标')
+    coord_z = db.Column(db.Float, comment='Z坐标')
+    energy = db.Column(db.Float, comment='能量(J)')
+
+    def __repr__(self):
+        return f'<MicroseismicEvent {self.event_time} {self.energy}J>'
+
+class RoadwayDeformation(db.Model):
+    """巷道变形数据"""
+    __tablename__ = 'roadway_deformation'
+    id = db.Column(db.Integer, primary_key=True)
+    record_time = db.Column(db.DateTime, index=True, default=datetime.utcnow, comment='记录时间')
+    station_id = db.Column(db.String(100), comment='测站ID')
+    top_bottom_deformation = db.Column(db.Float, comment='顶底板变形量(mm)')
+    left_right_deformation = db.Column(db.Float, comment='两帮变形量(mm)')
+    deformation_rate = db.Column(db.Float, comment='变形速率(mm/d)')
+
+    def __repr__(self):
+        return f'<RoadwayDeformation {self.station_id} {self.top_bottom_deformation}mm>'

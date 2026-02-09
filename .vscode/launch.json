@@ -1,0 +1,45 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Flask (Backend)",
+            "type": "python",
+            "request": "launch",
+            "module": "flask",
+            "cwd": "${workspaceFolder}/backend",
+            "env": {
+                "FLASK_APP": "run.py",
+                "FLASK_ENV": "development",
+                "PYTHONUNBUFFERED": "1"
+            },
+            "args": [
+                "run",
+                "--no-debugger",
+                "--no-reload"
+            ],
+            "justMyCode": true
+        },
+        {
+            "name": "Vue.js (Frontend)",
+            "type": "msedge",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/frontend",
+            "breakOnLoad": true,
+            "sourceMapPathOverrides": {
+                "webpack:///./*": "${webRoot}/*",
+                "webpack:///src/*": "${webRoot}/src/*",
+                "webpack:///*": "${webRoot}/*",
+                "/**/./*": "${webRoot}/*",
+                "/*": "${webRoot}/*"
+            }
+        },
+        {
+            "name": "Launch All (Compound)",
+            "compounds": [
+                "Python: Flask (Backend)",
+                "Vue.js (Frontend)"
+            ]
+        }
+    ]
+}
