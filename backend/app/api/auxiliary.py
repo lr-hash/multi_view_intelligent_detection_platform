@@ -14,6 +14,27 @@ def get_alarm_config(current_user):
     data = auxiliary_service.get_alarm_configs()
     return jsonify(data)
 
+@bp.route('/alarms/config', methods=['POST'])
+@token_required
+def update_alarm_config(current_user):
+    """ 5.5.1.1 阈值设置 (更新) - 仅限管理员 """
+    if current_user.role != 'ADMIN':
+        return jsonify({'message': 'Admin privilege required!'}), 403
+        
+    data = request.json
+    for key, value in data.items():
+        # 期望格式: {"alarm_pressure_red": 50.0, ...}
+        auxiliary_service.set_system_config(key, value)
+        
+    return jsonify({'status': 'success', 'message': 'Configuration updated.'})
+
+@bp.route('/system/config', methods=['GET'])
+@token_required
+def get_all_system_configs(current_user):
+    """ 获取所有系统配置 """
+    data = auxiliary_service.get_all_configs()
+    return jsonify(data)
+
 @bp.route('/alarms/history', methods=['GET'])
 @token_required
 def get_alarm_history(current_user):

@@ -1,7 +1,35 @@
 from datetime import datetime, timedelta
 import random
 from app import db
-from app.models import AlarmRecord
+from app.models import AlarmRecord, SupportPressureData, MicroseismicEvent, RoadwayDeformation, FractureConstructionData, SystemConfig
+
+def get_system_config(key, default=None):
+    """获取单个配置项"""
+    config = SystemConfig.query.filter_by(config_key=key).first()
+    return config.config_value if config else default
+
+def set_system_config(key, value, description=None):
+    """更新或创建配置项"""
+    config = SystemConfig.query.filter_by(config_key=key).first()
+    if config:
+        config.config_value = str(value)
+        if description:
+            config.description = description
+    else:
+        config = SystemConfig(config_key=key, config_value=str(value), description=description)
+        db.session.add(config)
+    
+    try:
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        return False
+
+def get_all_configs():
+    """获取所有系统配置"""
+    configs = SystemConfig.query.all()
+    return {c.config_key: c.config_value for c in configs}
 
 def check_and_trigger_alarms(data_type, value, threshold_red, threshold_yellow):
     """
@@ -39,12 +67,21 @@ def check_and_trigger_alarms(data_type, value, threshold_red, threshold_yellow):
 def get_alarm_configs():
     """
     5.5.1.1 阈值设置 (获取)
+    从数据库读取阈值，如果不存在则使用硬编码默认值。
     """
-    # 模拟配置
     return {
-        "pressure": {"red": 45.0, "yellow": 35.0},
-        "deformation": {"red": 15.0, "yellow": 8.0},
-        "seismic": {"red": 100000.0, "yellow": 50000.0}
+        "pressure": {
+            "red": float(get_system_config("alarm_pressure_red", 45.0)),
+            "yellow": float(get_system_config("alarm_pressure_yellow", 35.0))
+        },
+        "deformation": {
+            "red": float(get_system_config("alarm_deformation_red", 15.0)),
+            "yellow": float(get_system_config("alarm_deformation_yellow", 8.0))
+        },
+        "seismic": {
+            "red": float(get_system_config("alarm_seismic_red", 100000.0)),
+            "yellow": float(get_system_config("alarm_seismic_yellow", 50000.0))
+        }
     }
 
 def get_alarm_history(limit=50):
@@ -64,8 +101,6 @@ def get_alarm_history(limit=50):
             "status": r.status
         } for r in records
     ]
-
-from app.models import AlarmRecord, SupportPressureData, MicroseismicEvent, RoadwayDeformation, FractureConstructionData
 
 def query_data(params):
     """
@@ -108,11 +143,10 @@ def query_data(params):
     # 执行查询
     records = query.order_by(time_field.desc()).limit(limit).all()
     
-    # 简单序列化 (实际应根据具体模型定义 serialize 方法)
+    # 简单序列化
     results = []
     for r in records:
         data = {c.name: getattr(r, c.name) for c in r.__table__.columns}
-        # 格式化 datetime 字段
         for k, v in data.items():
             if isinstance(v, datetime):
                 data[k] = v.isoformat()
@@ -124,7 +158,6 @@ def get_system_logs(level='INFO', limit=100):
     """
     5.5.3.2 系统日志
     """
-    print(f"SERVICE: Retrieving {level} system logs (simulated).")
     return [
         {"timestamp": "2026-02-02 23:01:00", "level": "INFO", "message": "User 'admin' logged in."},
         {"timestamp": "2026-02-02 23:02:00", "level": "WARNING", "message": "Interface 'FRACTURE_DB' is offline."},

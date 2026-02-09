@@ -152,3 +152,15 @@ class AlarmRecord(db.Model):
 
     def __repr__(self):
         return f'<AlarmRecord {self.alarm_type} {self.level} @ {self.timestamp}>'
+
+class SystemConfig(db.Model):
+    """系统运行配置 (键值对)"""
+    __tablename__ = 'system_config'
+    id = db.Column(db.Integer, primary_key=True)
+    config_key = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    config_value = db.Column(db.Text, nullable=False)
+    description = db.Column(db.String(200))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<SystemConfig {self.config_key}: {self.config_value}>'
