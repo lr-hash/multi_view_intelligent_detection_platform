@@ -1,12 +1,12 @@
 # Implementation Plan - 3D 可视化场景构建与轨迹渲染
 
 ## Phase 1: 前端 Three.js 集成 (Frontend Three.js Integration)
-- [ ] **Task: 搭建基础 3D 组件**
-    - [ ] 在 `frontend/src/components` 中创建 `ThreeScene.vue`。
-    - [ ] 实现基础渲染循环和 Resize 监听。
-- [ ] **Task: 配置交互与环境**
-    - [ ] 引入 `OrbitControls`。
-    - [ ] 设置符合工业准则的深色背景和坐标轴辅助线 (AxesHelper)。
+- [x] **Task: 搭建基础 3D 组件**
+    - [x] 在 `frontend/src/components` 中创建 `ThreeScene.vue`。
+    - [x] 实现基础渲染循环和 Resize 监听。
+- [x] **Task: 配置交互与环境**
+    - [x] 引入 `OrbitControls`。
+    - [x] 设置符合工业准则的深色背景和坐标轴辅助线 (AxesHelper)。
 - [ ] **Task: 编写基础组件测试**
     - [ ] 验证组件挂载和 Renderer 初始化。
 - [ ] **Task: Conductor - User Manual Verification '前端 Three.js 集成' (Protocol in workflow.md)**
