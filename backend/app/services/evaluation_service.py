@@ -63,3 +63,41 @@ def generate_evaluation_report(borehole_id):
         "data_comparison": comparison,
         "evaluation_indices": indices
     }
+
+def calculate_evaluation_metrics(borehole_id):
+    """
+    研发评价算法核心逻辑：量化计算压裂有效率和顶板稳定性。
+    """
+    # 获取对比数据 (模拟)
+    p_data = get_comparison_data(borehole_id, 'pressure')
+    d_data = get_comparison_data(borehole_id, 'deformation')
+    
+    # 1. 矿压降低率 (Pressure Reduction Rate)
+    p_pre = p_data['pre_fracturing']['avg']
+    p_post = p_data['post_fracturing']['avg']
+    p_reduction = (p_pre - p_post) / p_pre if p_pre > 0 else 0
+    
+    # 2. 变形控制率 (Deformation Control Rate)
+    d_pre = d_data['pre_fracturing']['max_rate']
+    d_post = d_data['post_fracturing']['max_rate']
+    d_control = (d_pre - d_post) / d_pre if d_pre > 0 else 0
+    
+    # 3. 压裂有效率 (综合评分)
+    # 权重：压力 0.6, 变形 0.4
+    eff_value = (p_reduction * 0.6 + d_control * 0.4) * 100
+    eff_value = max(0, min(100, eff_value + 50)) # 基础分 50
+    
+    # 4. 稳定性指数 (基于残余压力和变形)
+    stability = 100 - (p_post * 1.5 + d_post * 2)
+    stability = max(0, min(100, stability))
+    
+    return {
+        "borehole_id": borehole_id,
+        "metrics": {
+            "pressure_reduction": round(p_reduction * 100, 2),
+            "deformation_control": round(d_control * 100, 2),
+            "efficiency": round(eff_value, 2),
+            "stability_index": round(stability, 2)
+        },
+        "level": "稳定" if stability > 70 else ("一般" if stability > 40 else "危险")
+    }

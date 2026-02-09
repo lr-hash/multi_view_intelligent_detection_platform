@@ -1,11 +1,11 @@
 # Implementation Plan - 压裂效果评价模型与 PDF 报告生成
 
 ## Phase 1: 评价算法与业务服务 (Evaluation Algorithm & Service)
-- [ ] **Task: 开发评价算法核心逻辑**
-    - [ ] 在 `backend/app/services/evaluation_service.py` 中实现 `calculate_evaluation_metrics`。
-- [ ] **Task: 编写算法单元测试**
-    - [ ] 验证指标计算的准确性。
-- [ ] **Task: Conductor - User Manual Verification '评价算法与业务服务' (Protocol in workflow.md)**
+- [x] **Task: 开发评价算法核心逻辑**
+    - [x] 在 `backend/app/services/evaluation_service.py` 中实现 `calculate_evaluation_metrics`.
+- [x] **Task: 编写算法单元测试**
+    - [x] 验证指标计算的准确性.
+- [x] **Task: Conductor - User Manual Verification '评价算法与业务服务' (Protocol in workflow.md)**
 
 ## Phase 2: PDF 报告生成与 API (PDF Generation & API)
 - [ ] **Task: 集成 PDF 渲染库**
