@@ -1,33 +1,53 @@
 <template>
   <div class="visualize-container">
-    <three-scene ref="threeSceneRef" />
-    <div v-if="selectedBorehole" class="info-panel">
-      <h3>钻孔详情</h3>
-      <p><strong>钻孔编号:</strong> {{ selectedBorehole.borehole_no }}</p>
-      <p><strong>所属钻场:</strong> {{ selectedBorehole.site_name }}</p>
-      <p><strong>设计长度:</strong> {{ selectedBorehole.design_length }} m</p>
-      <p><strong>孔径:</strong> {{ selectedBorehole.diameter }} mm</p>
-      <p><strong>压裂段数:</strong> {{ selectedBorehole.segments }}</p>
-      <button @click="selectedBorehole = null">关闭</button>
+    <three-scene ref="threeSceneRef" @click="handleSceneClick" />
+    <div v-if="selectedData" class="info-panel">
+      <h3>{{ selectedData.type === 'borehole' ? '钻孔详情' : '压裂段详情' }}</h3>
+      <template v-if="selectedData.type === 'borehole'">
+        <p><strong>钻孔编号:</strong> {{ selectedData.borehole_no }}</p>
+        <p><strong>所属钻场:</strong> {{ selectedData.site_name }}</p>
+        <p><strong>设计长度:</strong> {{ selectedData.design_length }} m</p>
+      </template>
+      <template v-else>
+        <p><strong>段号:</strong> {{ selectedData.segment_no }}</p>
+        <p><strong>压力:</strong> {{ selectedData.pressure.toFixed(2) }} MPa</p>
+        <p><strong>排量:</strong> {{ selectedData.total_volume.toFixed(2) }} m³</p>
+        <p><strong>流量:</strong> {{ selectedData.flow_rate.toFixed(2) }} m³/min</p>
+      </template>
+      <button @click="selectedData = null">关闭</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 import * as THREE from 'three';
 import ThreeScene from '@/components/ThreeScene.vue';
-import { createTrajectoryLine } from '@/utils/three-utils';
+import { createTrajectoryLine, createFractureSphere } from '@/utils/three-utils';
 import api from '@/services/api';
 
 const threeSceneRef = ref(null);
-const selectedBorehole = ref(null);
+const selectedData = ref(null);
 const interactiveObjects = [];
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 const COLORS = {
   DEFAULT: 0x00ff00,
   HIGHLIGHT: 0xffa500,
+  FRACTURE_LOW: 0x00ff00,
+  FRACTURE_HIGH: 0xff0000,
 };
+
+// 根据数值映射颜色 (绿 -> 红)
+function getHeatColor(value, min, max) {
+  const normalized = Math.min(1, Math.max(0, (value - min) / (max - min)));
+  return new THREE.Color().lerpColors(
+    new THREE.Color(COLORS.FRACTURE_LOW),
+    new THREE.Color(COLORS.FRACTURE_HIGH),
+    normalized
+  );
+}
 
 async function fetchDataAndRender() {
   if (!threeSceneRef.value) return;
@@ -37,10 +57,9 @@ async function fetchDataAndRender() {
     const response = await api.getDrillingDesign();
     const sites = response.data;
     
-    // 简单模拟大地坐标到 3D 空间的对齐 (以第一个钻场为原点)
     let offset = null;
 
-    sites.forEach(site => {
+    for (const site of sites) {
       if (!offset) {
         offset = { x: site.coord_e, y: site.coord_z, z: -site.coord_n };
       }
@@ -59,7 +78,7 @@ async function fetchDataAndRender() {
       siteHelper.position.copy(sitePosition);
       scene.add(siteHelper);
 
-      site.boreholes.forEach(borehole => {
+      for (const borehole of site.boreholes) {
         if (borehole.trajectories && borehole.trajectories.length > 1) {
           const points = borehole.trajectories.map(p => ({
             x: p.coord_e - offset.x,
@@ -68,38 +87,71 @@ async function fetchDataAndRender() {
           }));
           
           const line = createTrajectoryLine(points, COLORS.DEFAULT);
-          line.userData = { ...borehole, site_name: site.name };
+          line.userData = { ...borehole, site_name: site.name, type: 'borehole' };
           scene.add(line);
           interactiveObjects.push(line);
+
+          // 获取压裂详情并渲染
+          await renderFractureSegments(borehole.id, offset);
         }
-      });
-    });
+      }
+    }
 
   } catch (error) {
-    console.error("Failed to fetch or render drilling design data:", error);
-    // 如果 API 失败，渲染一条模拟轨迹用于演示
-    renderMockTrajectory();
+    console.error("Failed to fetch or render design data:", error);
   }
 }
 
-function renderMockTrajectory() {
+async function renderFractureSegments(boreholeId, offset) {
   const { scene } = threeSceneRef.value;
-  const mockPoints = [
-    {x: 0, y: 0, z: 0},
-    {x: 10, y: 5, z: -20},
-    {x: 30, y: 2, z: -50},
-    {x: 60, y: -5, z: -100}
-  ];
-  const line = createTrajectoryLine(mockPoints, COLORS.DEFAULT);
-  line.userData = { borehole_no: 'MOCK-001', site_name: '模拟钻场', design_length: 100, segments: 5 };
-  scene.add(line);
+  try {
+    const res = await api.getBoreholeFractureData(boreholeId);
+    const fractureData = res.data;
+
+    fractureData.forEach(seg => {
+      const pos = {
+        x: seg.position.x - offset.x,
+        y: seg.position.y - offset.y,
+        z: seg.position.z - offset.z
+      };
+
+      // 动态映射：半径 -> 压力，颜色 -> 排量
+      const radius = 2 + (seg.pressure / 10);
+      const color = getHeatColor(seg.total_volume, 100, 1000);
+
+      const sphere = createFractureSphere(pos, radius, color);
+      sphere.userData = { ...seg, type: 'segment' };
+      scene.add(sphere);
+      interactiveObjects.push(sphere);
+    });
+  } catch (e) {
+    console.warn(`No fracture data for borehole ${boreholeId}`);
+  }
+}
+
+function handleSceneClick(event) {
+  if (!threeSceneRef.value) return;
+  const { camera } = threeSceneRef.value;
+  
+  // 计算鼠标在 3D 空间中的归一化坐标
+  const rect = event.target.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(interactiveObjects);
+
+  if (intersects.length > 0) {
+    selectedData.value = intersects[0].object.userData;
+  } else {
+    selectedData.value = null;
+  }
 }
 
 onMounted(() => {
-  // 等待组件挂载后获取数据
   setTimeout(() => {
     fetchDataAndRender();
-  }, 100);
+  }, 200);
 });
 </script>
 

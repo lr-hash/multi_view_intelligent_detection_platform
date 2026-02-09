@@ -42,6 +42,9 @@ const api = {
   getDrillingDesign() {
     return apiClient.get('/visualize/drilling_design');
   },
+  getBoreholeFractureData(boreholeId) {
+    return apiClient.get(`/visualization/fracture-data/${boreholeId}`);
+  },
   getPressureTrendData(range) {
     return apiClient.get('/trends/pressure', { params: { range } });
   },
