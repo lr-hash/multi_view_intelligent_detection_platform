@@ -37,8 +37,12 @@ def standardize_data_endpoint():
 def fuse_data_endpoint():
     """
     Endpoint to trigger data fusion.
-    Expects a dictionary of data streams.
+    Expects JSON: {"pressure": float, "seismic": float, "deformation": float}
     """
-    data_streams = request.json
-    fusion_result = processing_service.fuse_data(data_streams)
+    data = request.json
+    pressure = data.get('pressure', 0)
+    seismic = data.get('seismic', 0)
+    deformation = data.get('deformation', 0)
+    
+    fusion_result = processing_service.fuse_data(pressure, seismic, deformation)
     return jsonify(fusion_result)
