@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: 初始化数据库架构与多源数据集成接口**
+- [x] **Track: 初始化数据库架构与多源数据集成接口**
   *Link: [./tracks/init_db_integration_20260209/](./tracks/init_db_integration_20260209/)*
