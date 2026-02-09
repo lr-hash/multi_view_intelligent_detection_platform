@@ -5,23 +5,24 @@
     <form @submit.prevent="executeQuery" class="query-form">
       <div class="input-group">
         <label for="dataType">数据类型:</label>
-        <select id="dataType" v-model="queryParams.dataType">
+        <select id="dataType" v-model="queryParams.target">
           <option value="pressure">支架压力数据</option>
-          <option value="microseismic">微震事件数据</option>
+          <option value="seismic">微震事件数据</option>
           <option value="deformation">巷道变形数据</option>
-          <!-- Add more data types as needed -->
+          <option value="fracture">压裂施工数据</option>
+          <option value="alarm">报警历史记录</option>
         </select>
       </div>
       <div class="input-group">
         <label for="startTime">开始时间:</label>
-        <input type="datetime-local" id="startTime" v-model="queryParams.startTime" />
+        <input type="datetime-local" id="startTime" v-model="queryParams.start_time" />
       </div>
       <div class="input-group">
         <label for="endTime">结束时间:</label>
-        <input type="datetime-local" id="endTime" v-model="queryParams.endTime" />
+        <input type="datetime-local" id="endTime" v-model="queryParams.end_time" />
       </div>
       <button type="submit" class="query-button">查询</button>
-      <button type="button" @click="exportData" class="export-button" :disabled="!queryResults.length">导出</button>
+      <button type="button" @click="exportData" class="export-button" :disabled="!queryResults.length">导出 CSV</button>
     </form>
 
     <div v-if="isLoading" class="loading-message">加载查询结果中...</div>
@@ -52,9 +53,9 @@ import { ref } from 'vue';
 import api from '@/services/api';
 
 const queryParams = ref({
-  dataType: 'pressure',
-  startTime: '',
-  endTime: '',
+  target: 'pressure',
+  start_time: '',
+  end_time: '',
 });
 const queryResults = ref([]);
 const isLoading = ref(false);
@@ -65,8 +66,16 @@ async function executeQuery() {
   isLoading.value = true;
   errorMessage.value = '';
   hasQueried.value = true;
+  
+  // 转换时间格式为 ISO (后端要求)
+  const payload = {
+    target: queryParams.value.target,
+    start_time: queryParams.value.start_time ? new Date(queryParams.value.start_time).toISOString() : null,
+    end_time: queryParams.value.end_time ? new Date(queryParams.value.end_time).toISOString() : null,
+  };
+
   try {
-    const response = await api.queryData(queryParams.value);
+    const response = await api.queryData(payload);
     queryResults.value = response.data;
   } catch (error) {
     console.error('Error executing query:', error);
@@ -78,17 +87,20 @@ async function executeQuery() {
 }
 
 function exportData() {
-  // Simple CSV export for demonstration
   if (!queryResults.value.length) return;
 
   const headers = Object.keys(queryResults.value[0]).join(',');
-  const rows = queryResults.value.map(row => Object.values(row).join(',')).join('\n');
-  const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows;
-
-  const encodedUri = encodeURI(csvContent);
+  const rows = queryResults.value.map(row => 
+    Object.values(row).map(v => `"${v}"`).join(',')
+  ).join('\n');
+  
+  const csvContent = "\uFEFF" + headers + "\n" + rows; // Add BOM for Excel compatibility
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
   const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `data_export_${queryParams.value.dataType}.csv`);
+  link.setAttribute("href", url);
+  link.setAttribute("download", `data_export_${queryParams.value.target}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

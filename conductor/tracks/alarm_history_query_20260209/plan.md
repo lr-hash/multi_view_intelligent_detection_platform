@@ -21,8 +21,8 @@
 - [x] **Task: Conductor - User Manual Verification '后端综合查询引擎' (Protocol in workflow.md)**
 
 ## Phase 3: 前端查询与展示 (Frontend Views)
-- [ ] **Task: 开发报警历史页面**
-    - [ ] 实现 `AlarmHistoryView.vue`。
-- [ ] **Task: 开发综合查询页面**
-    - [ ] 实现 `DataQueryView.vue` 并集成高级过滤器。
-- [ ] **Task: Conductor - User Manual Verification '前端查询与展示' (Protocol in workflow.md)**
+- [x] **Task: 开发报警历史页面**
+    - [x] 实现 `AlarmHistoryView.vue`.
+- [x] **Task: 开发综合查询页面**
+    - [x] 实现 `DataQueryView.vue` 并集成高级过滤器.
+- [x] **Task: Conductor - User Manual Verification '前端查询与展示' (Protocol in workflow.md)**
