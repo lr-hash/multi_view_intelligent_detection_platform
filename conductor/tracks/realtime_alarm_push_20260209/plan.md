@@ -18,8 +18,8 @@
 - [x] **Task: Conductor - User Manual Verification '前端实时监听与状态管理' (Protocol in workflow.md)**
 
 ## Phase 3: 优化与安全性增强 (Enhancements & Security)
-- [ ] **Task: 实现 WebSocket 身份验证**
-    - [ ] 在 `connect` 事件中验证 JWT Token。
-- [ ] **Task: 综合功能验证**
-    - [ ] 全流程测试：触发报警 -> 后端推送 -> 前端弹出。
-- [ ] **Task: Conductor - User Manual Verification '优化与安全性增强' (Protocol in workflow.md)**
+- [x] **Task: 实现 WebSocket 身份验证**
+    - [x] 在 `connect` 事件中验证 JWT Token.
+- [x] **Task: 综合功能验证**
+    - [x] 全流程测试：触发报警 -> 后端推送 -> 前端弹出.
+- [x] **Task: Conductor - User Manual Verification '优化与安全性增强' (Protocol in workflow.md)**

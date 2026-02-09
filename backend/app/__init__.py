@@ -22,5 +22,9 @@ def create_app(config_class=Config):
     from app import models
     from app import commands
     commands.register_commands(app)
+    
+    # Register SocketIO events
+    with app.app_context():
+        from app import socket_events
 
     return app
