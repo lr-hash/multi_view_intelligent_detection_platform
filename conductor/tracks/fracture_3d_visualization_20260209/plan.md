@@ -1,13 +1,13 @@
 # Implementation Plan - 压裂施工 3D 可视化与动态效果实现
 
 ## Phase 1: 后端压裂数据 API (Backend Fracture Data API)
-- [ ] **Task: 实现压裂数据查询服务**
-    - [ ] 在 `backend/app/services/visualization_service.py` 中编写获取指定钻孔压裂数据的函数。
-- [ ] **Task: 定义可视化数据接口**
-    - [ ] 在 `backend/app/api/visualization.py` 中暴露相关 API 端点。
-- [ ] **Task: 编写 API 单元测试**
-    - [ ] 验证接口返回的数据结构正确。
-- [ ] **Task: Conductor - User Manual Verification '后端压裂数据 API' (Protocol in workflow.md)**
+- [x] **Task: 实现压裂数据查询服务**
+    - [x] 在 `backend/app/services/visualization_service.py` 中编写获取指定钻孔压裂数据的函数.
+- [x] **Task: 定义可视化数据接口**
+    - [x] 在 `backend/app/api/visualization.py` 中暴露相关 API 端点.
+- [x] **Task: 编写 API 单元测试**
+    - [x] 验证接口返回的数据结构正确.
+- [x] **Task: Conductor - User Manual Verification '后端压裂数据 API' (Protocol in workflow.md)**
 
 ## Phase 2: 动态 3D 压裂段渲染 (Dynamic 3D Fracture Rendering)
 - [ ] **Task: 开发压裂球渲染工具**

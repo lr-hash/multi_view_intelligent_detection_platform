@@ -12,6 +12,12 @@ def get_drilling_design_data():
     data = visualization_service.get_drilling_design_data()
     return jsonify(data)
 
+@bp.route('/visualization/fracture-data/<int:borehole_id>', methods=['GET'])
+def get_borehole_fracture_data(borehole_id):
+    """ 获取钻孔压裂详情数据 """
+    data = visualization_service.get_borehole_fracture_data(borehole_id)
+    return jsonify(data)
+
 @bp.route('/dashboard/core_metrics', methods=['GET'])
 def get_dashboard_metrics():
     """ 5.3.2 数据看板 - 核心指标实时展示 """

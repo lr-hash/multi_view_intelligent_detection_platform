@@ -1,6 +1,45 @@
-from app.models import DrillingSite, Borehole, BoreholeTrajectory
+from app.models import DrillingSite, Borehole, BoreholeTrajectory, FractureConstructionData
 import random
 from datetime import datetime, timedelta
+
+def get_borehole_fracture_data(borehole_id):
+    """
+    获取指定钻孔的压裂段数据及其对应的轨迹坐标。
+    """
+    # 1. 查询压裂施工数据
+    # fracture_data = FractureConstructionData.query.filter_by(borehole_id=borehole_id).all()
+    # 模拟数据 (12 个压裂段)
+    fracture_data = []
+    for i in range(1, 13):
+        fracture_data.append({
+            "segment_no": i,
+            "pressure": 15 + random.random() * 10,
+            "flow_rate": 1.5 + random.random() * 1.5,
+            "total_volume": 100 + i * 50,
+            "sand_concentration": 50 + random.random() * 100
+        })
+    
+    # 2. 查询钻孔轨迹以确定每个段的空间位置 (假设每个段等间距分布)
+    # trajectories = BoreholeTrajectory.query.filter_by(borehole_id=borehole_id).order_by(BoreholeTrajectory.measured_depth).all()
+    # 模拟轨迹点 (对应 550m 长度)
+    trajectories = [{"measured_depth": i*50, "coord_e": 35400+i*5, "coord_n": 28000+i*50, "coord_z": -610+i*2} for i in range(11)]
+    
+    # 简单逻辑：将压裂段映射到轨迹点上 (此处仅为演示，实际应根据测深匹配)
+    results = []
+    for idx, seg in enumerate(fracture_data):
+        # 循环复用模拟轨迹点作为位置
+        traj_idx = idx % len(trajectories)
+        t = trajectories[traj_idx]
+        results.append({
+            **seg,
+            "position": {
+                "x": t['coord_e'],
+                "y": t['coord_z'],
+                "z": -t['coord_n'] # 注意 Y/Z 轴转换
+            }
+        })
+        
+    return results
 
 def get_drilling_design_data():
     """
