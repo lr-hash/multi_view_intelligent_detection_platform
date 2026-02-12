@@ -1,0 +1,8 @@
+{
+  "track_id": "data_management_center_20260212",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-02-12T22:42:00Z",
+  "updated_at": "2026-02-12T22:42:00Z",
+  "description": "新增一个数据管理中心功能，支持数据库中各类数据的增删改查、批量导入及权限控制。"
+}
