@@ -9,3 +9,4 @@ from . import processing
 from . import visualization
 from . import evaluation
 from . import auxiliary
+from . import management

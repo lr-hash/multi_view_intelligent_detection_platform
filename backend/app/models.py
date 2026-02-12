@@ -19,10 +19,26 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
+class WorkingFace(db.Model):
+    """工作面基本参数"""
+    __tablename__ = 'working_face'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False, comment='工作面名称')
+    length = db.Column(db.Float, comment='工作面长度(m)')
+    advance_length = db.Column(db.Float, comment='推进长度(m)')
+    mining_height = db.Column(db.Float, comment='采高(m)')
+    start_date = db.Column(db.DateTime, comment='开采日期')
+    description = db.Column(db.String(200))
+    drilling_sites = db.relationship('DrillingSite', backref='working_face', lazy='dynamic')
+
+    def __repr__(self):
+        return f'<WorkingFace {self.name}>'
+
 class DrillingSite(db.Model):
     """钻场信息"""
     __tablename__ = 'drilling_site'
     id = db.Column(db.Integer, primary_key=True)
+    working_face_id = db.Column(db.Integer, db.ForeignKey('working_face.id'), comment='所属工作面ID')
     name = db.Column(db.String(100), nullable=False, comment='钻场名称')
     location = db.Column(db.String(200), comment='位置')
     coord_e = db.Column(db.Float, comment='大地坐标东坐标')
@@ -164,3 +180,19 @@ class SystemConfig(db.Model):
 
     def __repr__(self):
         return f'<SystemConfig {self.config_key}: {self.config_value}>'
+
+class MonitoringStation(db.Model):
+    """监测测点信息"""
+    __tablename__ = 'monitoring_station'
+    id = db.Column(db.Integer, primary_key=True)
+    station_id = db.Column(db.String(50), unique=True, nullable=False, comment='测点编号/ID')
+    type = db.Column(db.String(50), nullable=False, comment='测点类型(矿压/微震/变形)')
+    location = db.Column(db.String(200), comment='安装位置')
+    coord_x = db.Column(db.Float, comment='X坐标')
+    coord_y = db.Column(db.Float, comment='Y坐标')
+    coord_z = db.Column(db.Float, comment='Z坐标')
+    install_date = db.Column(db.DateTime, comment='安装日期')
+    status = db.Column(db.String(20), default='ACTIVE', comment='状态(ACTIVE/INACTIVE)')
+
+    def __repr__(self):
+        return f'<MonitoringStation {self.station_id} ({self.type})>'
