@@ -51,6 +51,9 @@ const api = {
   getBoreholeFractureData(boreholeId) {
     return apiClient.get(`/visualization/fracture-data/${boreholeId}`);
   },
+  getMicroseismicPoints() {
+    return apiClient.get('/visualization/microseismic-points');
+  },
   getPressureTrendData(range) {
     return apiClient.get('/trends/pressure', { params: { range } });
   },
@@ -78,6 +81,32 @@ const api = {
   },
   queryData(params) {
     return apiClient.post('/query', params);
+  },
+
+  // Data Management
+  getManageableTables() {
+    return apiClient.get('/management/tables');
+  },
+  getDataList(tableName, params) {
+    return apiClient.get(`/management/${tableName}`, { params });
+  },
+  createData(tableName, data) {
+    return apiClient.post(`/management/${tableName}`, data);
+  },
+  updateData(tableName, id, data) {
+    return apiClient.put(`/management/${tableName}/${id}`, data);
+  },
+  deleteData(tableName, id) {
+    return apiClient.delete(`/management/${tableName}/${id}`);
+  },
+  importData(tableName, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post(`/management/import/${tableName}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
   }
 };
 

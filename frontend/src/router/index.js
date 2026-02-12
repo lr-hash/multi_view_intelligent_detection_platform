@@ -56,6 +56,11 @@ const router = createRouter({
       path: '/data-query',
       name: 'data-query',
       component: () => import('../views/DataQueryView.vue')
+    },
+    {
+      path: '/data-management',
+      name: 'data-management',
+      component: () => import('../views/DataManagementView.vue')
     }
   ]
 })

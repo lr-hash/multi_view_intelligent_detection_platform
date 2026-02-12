@@ -16,15 +16,15 @@
 - [x] Task: Conductor - User Manual Verification '阶段 2: 导入服务' (Protocol in workflow.md)
 
 ## 阶段 3: 前端管理界面开发
-- [ ] Task: 创建数据管理视图 (`DataManagementView.vue`) 与侧边栏导航
-- [ ] Task: 开发动态表单组件，根据所选表结构自动生成输入项
-- [ ] Task: 实现数据列表展示、搜索与分页组件
-- [ ] Task: 实现新增/编辑弹窗及删除确认交互
-- [ ] Task: 集成权限控制：根据用户角色隐藏/禁用敏感操作按钮
-- [ ] Task: Conductor - User Manual Verification '阶段 3: 前端界面' (Protocol in workflow.md)
+- [x] Task: 创建数据管理视图 (`DataManagementView.vue`) 与侧边栏导航
+- [x] Task: 开发动态表单组件，根据所选表结构自动生成输入项
+- [x] Task: 实现数据列表展示、搜索与分页组件
+- [x] Task: 实现新增/编辑弹窗及删除确认交互
+- [x] Task: 集成权限控制：根据用户角色隐藏/禁用敏感操作按钮
+- [x] Task: Conductor - User Manual Verification '阶段 3: 前端界面' (Protocol in workflow.md)
 
 ## 阶段 4: 联调、验证与优化
-- [ ] Task: 前后端联调：验证全流程 CRUD 操作及导入功能
-- [ ] Task: 性能优化：针对大数据量表的查询进行索引优化或分页调整
-- [ ] Task: 最终冒烟测试：确保所有验收标准均已达成
-- [ ] Task: Conductor - User Manual Verification '阶段 4: 最终验收' (Protocol in workflow.md)
+- [x] Task: 前后端联调：验证全流程 CRUD 操作及导入功能
+- [x] Task: 性能优化：针对大数据量表的查询进行索引优化或分页调整
+- [x] Task: 最终冒烟测试：确保所有验收标准均已达成
+- [x] Task: Conductor - User Manual Verification '阶段 4: 最终验收' (Protocol in workflow.md)

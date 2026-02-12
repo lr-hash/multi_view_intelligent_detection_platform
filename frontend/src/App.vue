@@ -46,6 +46,7 @@ onMounted(() => {
         <RouterLink to="/alarm-history">报警历史</RouterLink>
         <RouterLink to="/interface-config">接口配置</RouterLink>
         <RouterLink to="/data-query">数据查询</RouterLink>
+        <RouterLink to="/data-management">数据管理</RouterLink>
         <a href="#" @click.prevent="handleLogout">退出登录</a>
       </nav>
     </div>
@@ -104,9 +105,16 @@ nav a:not(.router-link-exact-active):hover {
   color: #ffffff;
 }
 
+body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
 main {
   padding: 2rem;
   flex-grow: 1;
+  background-color: #0f172a;
+  min-height: calc(100vh - 4rem);
 }
 
 main.full-page {
