@@ -35,10 +35,10 @@ onMounted(() => {
   <header v-if="authStore.isAuthenticated && !isLoginPage">
     <div class="wrapper">
       <div class="title">
-        <h1>多视域智能侦测平台</h1>
+        <h1>多视域智能侦测平台！！</h1>
       </div>
       <nav>
-        <RouterLink to="/" class="nav-link">主页</RouterLink>
+        <RouterLink to="/" class="nav-link">主页！！！</RouterLink>
         
         <!-- 监控看板 -->
         <div class="nav-dropdown">
