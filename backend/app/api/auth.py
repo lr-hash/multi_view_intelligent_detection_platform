@@ -34,6 +34,7 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
+    print(f"Login attempt: username={username}, password={password}")
 
     if not username or not password:
         return jsonify({'message': 'Username and password are required!'}), 400
@@ -46,7 +47,7 @@ def login():
     token = jwt.encode({
         'user_id': user.id,
         'role': user.role,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        'exp': datetime.datetime.now() + datetime.timedelta(hours=24)
     }, current_app.config['SECRET_KEY'], algorithm="HS256")
 
     return jsonify({

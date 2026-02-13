@@ -1,157 +1,218 @@
 <template>
   <div class="visualize-container">
     <three-scene ref="threeSceneRef" @click="handleSceneClick" />
-    <div v-if="selectedData" class="info-panel">
-      <h3>{{ selectedData.type === 'borehole' ? '钻孔详情' : '压裂段详情' }}</h3>
-      <template v-if="selectedData.type === 'borehole'">
-        <p><strong>钻孔编号:</strong> {{ selectedData.borehole_no }}</p>
-        <p><strong>所属钻场:</strong> {{ selectedData.site_name }}</p>
-        <p><strong>设计长度:</strong> {{ selectedData.design_length }} m</p>
-      </template>
-      <template v-else>
-        <p><strong>段号:</strong> {{ selectedData.segment_no }}</p>
-        <p><strong>压力:</strong> {{ selectedData.pressure.toFixed(2) }} MPa</p>
-        <p><strong>排量:</strong> {{ selectedData.total_volume.toFixed(2) }} m³</p>
-        <p><strong>流量:</strong> {{ selectedData.flow_rate.toFixed(2) }} m³/min</p>
-      </template>
-      <button @click="selectedData = null">关闭</button>
+    
+    <!-- 顶部控制与图层面板 -->
+    <div class="overlay-controls">
+      <div class="control-group">
+        <h4>图层管理</h4>
+        <div class="layer-item" v-for="(val, key) in layers" :key="key">
+          <input type="checkbox" :id="key" v-model="layers[key]" @change="toggleLayers">
+          <label :for="key">{{ layerNames[key] }}</label>
+        </div>
+      </div>
+      <div class="control-group">
+        <h4>视图控制</h4>
+        <button @click="resetView" class="ui-btn">全景复位</button>
+        <button @click="toggle2D" class="ui-btn">{{ is2D ? '3D视角' : '2D俯视' }}</button>
+      </div>
+    </div>
+
+    <!-- 状态统计 -->
+    <div class="top-status-bar">
+      <div class="status-node">
+        <span class="dot pulse-blue"></span>
+        <span class="label">5 钻场 | 30 钻孔 (96mm)</span>
+      </div>
+      <div class="status-node" v-if="hoverInfo">
+        <span class="label">当前聚焦: {{ hoverInfo }}</span>
+      </div>
+    </div>
+
+    <!-- 详情面板 -->
+    <div v-if="selectedData" class="info-panel animate-slide-in">
+      <div class="panel-header">
+        <h3>{{ getPanelTitle() }}</h3>
+        <button class="close-btn" @click="selectedData = null">×</button>
+      </div>
+      
+      <div class="panel-body">
+        <template v-if="selectedData.type === 'borehole'">
+          <div class="info-row"><span class="label">编号:</span> <span class="val highlight">{{ selectedData.borehole_no }}</span></div>
+          <div class="info-row"><span class="label">孔径:</span> <span class="val">96 mm</span></div>
+          <div class="info-row"><span class="label">设计长度:</span> <span class="val">{{ selectedData.design_length.toFixed(1) }} m</span></div>
+          <div class="info-row"><span class="label">方位/倾角:</span> <span class="val">{{ selectedData.azimuth }}° / {{ selectedData.dip_angle }}°</span></div>
+          <div class="info-row"><span class="label">分段数:</span> <span class="val">{{ selectedData.segments }} 段</span></div>
+        </template>
+        
+        <template v-else-if="selectedData.type === 'site'">
+          <div class="info-row"><span class="label">钻场名称:</span> <span class="val highlight">{{ selectedData.name }}</span></div>
+          <div class="info-row"><span class="label">位置:</span> <span class="val">{{ selectedData.location }}</span></div>
+          <div class="info-row"><span class="label">包含钻孔:</span> <span class="val">6 个 (1#-6#)</span></div>
+        </template>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, reactive, watch } from 'vue';
 import * as THREE from 'three';
 import ThreeScene from '@/components/ThreeScene.vue';
-import { createTrajectoryLine, createFractureSphere } from '@/utils/three-utils';
+import * as TUtils from '@/utils/three-utils';
 import api from '@/services/api';
 
 const threeSceneRef = ref(null);
 const selectedData = ref(null);
-const interactiveObjects = [];
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+const hoverInfo = ref(null);
+const is2D = ref(false);
 
-const COLORS = {
-  DEFAULT: 0x00ff00,
-  HIGHLIGHT: 0xffa500,
-  FRACTURE_LOW: 0x00ff00,
-  FRACTURE_HIGH: 0xff0000,
+const layers = reactive({
+  roadway: true,
+  coalSeam: true,
+  designLine: true,
+  actualPipe: true,
+  sites: true,
+  roof: false
+});
+
+const layerNames = {
+  roadway: '巷道骨架',
+  coalSeam: '地质层位 (煤层)',
+  designLine: '设计轨迹 (虚线)',
+  actualPipe: '实钻轨迹 (96mm)',
+  sites: '钻场节点',
+  roof: '15m 顶板层位'
 };
 
-// 根据数值映射颜色 (绿 -> 红)
-function getHeatColor(value, min, max) {
-  const normalized = Math.min(1, Math.max(0, (value - min) / (max - min)));
-  return new THREE.Color().lerpColors(
-    new THREE.Color(COLORS.FRACTURE_LOW),
-    new THREE.Color(COLORS.FRACTURE_HIGH),
-    normalized
-  );
-}
+const stats = reactive({ boreholeCount: 0, fractureCount: 0, msCount: 0 });
+const interactiveObjects = [];
+const layerGroups = {};
 
-async function fetchDataAndRender() {
+let sceneOffset = { x: 0, y: 0, z: 0 };
+
+const getPanelTitle = () => {
+  if (!selectedData.value) return '';
+  return selectedData.value.type === 'site' ? '钻场详情' : '钻孔全生命周期参数';
+};
+
+async function initVisuals() {
   if (!threeSceneRef.value) return;
   const { scene } = threeSceneRef.value;
+
+  // 初始化图层分组
+  Object.keys(layers).forEach(key => {
+    const group = new THREE.Group();
+    scene.add(group);
+    layerGroups[key] = group;
+  });
 
   try {
     const response = await api.getDrillingDesign();
     const sites = response.data;
-    
-    let offset = null;
+    if (!sites.length) return;
+
+    // 以第一个钻场为坐标原点
+    sceneOffset = { x: sites[0].coord_e, y: sites[0].coord_z, z: -sites[0].coord_n };
+
+    // 1. 渲染巷道骨架 (简化为连接钻场的路径)
+    const roadwayPoints = sites.map(s => ({ x: s.coord_e - sceneOffset.x, y: s.coord_z - sceneOffset.y, z: -s.coord_n - sceneOffset.z }));
+    const roadwayMesh = TUtils.createRoadway(roadwayPoints);
+    layerGroups.roadway.add(roadwayMesh);
+
+    // 2. 渲染煤层
+    const coalSeam = TUtils.createCoalSeam({x: 0, y: 0, z: -500}, 300, 1500);
+    layerGroups.coalSeam.add(coalSeam);
+
+    // 3. 渲染顶板层位
+    const roof = TUtils.createRoofLayer({x: 0, y: 0, z: -500}, 300, 1500, 15);
+    layerGroups.roof.add(roof);
 
     for (const site of sites) {
-      if (!offset) {
-        offset = { x: site.coord_e, y: site.coord_z, z: -site.coord_n };
-      }
-
-      const sitePosition = new THREE.Vector3(
-        site.coord_e - offset.x,
-        site.coord_z - offset.y,
-        -site.coord_n - offset.z
-      );
-
-      // 渲染钻场标记
-      const siteHelper = new THREE.Mesh(
-        new THREE.SphereGeometry(2, 16, 16),
-        new THREE.MeshBasicMaterial({ color: 0xff0000 })
-      );
-      siteHelper.position.copy(sitePosition);
-      scene.add(siteHelper);
+      // 钻场标记
+      const pos = { x: site.coord_e - sceneOffset.x, y: site.coord_z - sceneOffset.y, z: -site.coord_n - sceneOffset.z };
+      const marker = TUtils.createSiteMarker(pos, site.name);
+      marker.userData = { ...site, type: 'site' };
+      layerGroups.sites.add(marker);
+      interactiveObjects.push(marker.children[0]); // 将核心球体加入交互
 
       for (const borehole of site.boreholes) {
-        if (borehole.trajectories && borehole.trajectories.length > 1) {
+        // 设计轨迹
+        const designLine = TUtils.createDesignTrajectory(pos, borehole.design_length, borehole.azimuth, borehole.dip_angle);
+        layerGroups.designLine.add(designLine);
+
+        // 实钻管路 (96mm)
+        if (borehole.trajectories?.length > 1) {
           const points = borehole.trajectories.map(p => ({
-            x: p.coord_e - offset.x,
-            y: p.coord_z - offset.y,
-            z: -p.coord_n - offset.z
+            x: p.coord_e - sceneOffset.x,
+            y: p.coord_z - sceneOffset.y,
+            z: -p.coord_n - sceneOffset.z
           }));
           
-          const line = createTrajectoryLine(points, COLORS.DEFAULT);
-          line.userData = { ...borehole, site_name: site.name, type: 'borehole' };
-          scene.add(line);
-          interactiveObjects.push(line);
-
-          // 获取压裂详情并渲染
-          await renderFractureSegments(borehole.id, offset);
+          const pipe = TUtils.createTrajectoryLine(points);
+          pipe.userData = { ...borehole, type: 'borehole' };
+          layerGroups.actualPipe.add(pipe);
+          interactiveObjects.push(pipe);
         }
       }
     }
-
+    
+    toggleLayers(); // 应用初始显隐
   } catch (error) {
-    console.error("Failed to fetch or render design data:", error);
+    console.error("Viz Error:", error);
   }
 }
 
-async function renderFractureSegments(boreholeId, offset) {
-  const { scene } = threeSceneRef.value;
-  try {
-    const res = await api.getBoreholeFractureData(boreholeId);
-    const fractureData = res.data;
-
-    fractureData.forEach(seg => {
-      const pos = {
-        x: seg.position.x - offset.x,
-        y: seg.position.y - offset.y,
-        z: seg.position.z - offset.z
-      };
-
-      // 动态映射：半径 -> 压力，颜色 -> 排量
-      const radius = 2 + (seg.pressure / 10);
-      const color = getHeatColor(seg.total_volume, 100, 1000);
-
-      const sphere = createFractureSphere(pos, radius, color);
-      sphere.userData = { ...seg, type: 'segment' };
-      scene.add(sphere);
-      interactiveObjects.push(sphere);
-    });
-  } catch (e) {
-    console.warn(`No fracture data for borehole ${boreholeId}`);
-  }
+function toggleLayers() {
+  Object.keys(layers).forEach(key => {
+    if (layerGroups[key]) layerGroups[key].visible = layers[key];
+  });
 }
+
+function resetView() {
+  const { controls, camera } = threeSceneRef.value;
+  camera.position.set(100, 100, 100);
+  controls.target.set(0, 0, 0);
+  controls.update();
+  is2D.value = false;
+}
+
+function toggle2D() {
+  const { controls, camera } = threeSceneRef.value;
+  if (!is2D.value) {
+    camera.position.set(0, 500, 0);
+    controls.target.set(0, 0, 0);
+    is2D.value = true;
+  } else {
+    resetView();
+  }
+  controls.update();
+}
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 function handleSceneClick(event) {
-  if (!threeSceneRef.value) return;
   const { camera } = threeSceneRef.value;
-  
-  // 计算鼠标在 3D 空间中的归一化坐标
   const rect = event.target.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
+  
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(interactiveObjects);
-
+  
   if (intersects.length > 0) {
-    selectedData.value = intersects[0].object.userData;
+    let obj = intersects[0].object;
+    // 如果是 SiteMarker 的子物体，找父级的 userData
+    const data = obj.userData.type ? obj.userData : (obj.parent?.userData?.type ? obj.parent.userData : null);
+    selectedData.value = data;
   } else {
     selectedData.value = null;
   }
 }
 
 onMounted(() => {
-  setTimeout(() => {
-    fetchDataAndRender();
-  }, 200);
+  setTimeout(initVisuals, 300);
 });
 </script>
 
@@ -159,41 +220,79 @@ onMounted(() => {
 .visualize-container {
   position: relative;
   width: 100%;
-  height: calc(100vh - 4rem - 4rem); /* Full height minus header and main padding */
+  height: calc(100vh - 8rem);
+  background: #020617;
 }
-#scene-container {
-  width: 100%;
-  height: 100%;
-}
-.info-panel {
+
+.overlay-controls {
   position: absolute;
   top: 20px;
   right: 20px;
-  background-color: rgba(26, 41, 82, 0.9);
-  border: 1px solid #2a3f78;
-  color: #fff;
+  background: rgba(15, 23, 42, 0.85);
   padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  width: 200px;
+  backdrop-filter: blur(8px);
+  z-index: 100;
+}
+
+.control-group { margin-bottom: 1.5rem; }
+.control-group h4 { margin: 0 0 0.8rem 0; font-size: 0.9rem; color: #94a3b8; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+
+.layer-item { margin-bottom: 0.6rem; display: flex; align-items: center; font-size: 0.85rem; }
+.layer-item input { margin-right: 10px; cursor: pointer; }
+
+.ui-btn {
+  width: 100%;
+  padding: 8px;
+  background: #334155;
+  border: 1px solid #475569;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+.ui-btn:hover { background: #475569; }
+
+.top-status-bar {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  gap: 15px;
+}
+.status-node {
+  background: rgba(15, 23, 42, 0.8);
+  padding: 8px 16px;
   border-radius: 8px;
-  width: 300px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  color: #f1f5f9;
 }
-.info-panel h3 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #2a3f78;
-  padding-bottom: 0.5rem;
+
+.info-panel {
+  position: absolute;
+  bottom: 40px;
+  right: 240px;
+  background: rgba(30, 41, 59, 0.95);
+  width: 320px;
+  border-radius: 12px;
+  border: 1px solid #3b82f6;
+  color: #fff;
+  z-index: 100;
 }
-.info-panel p {
-  margin: 0.5rem 0;
-}
-.info-panel button {
-    margin-top: 1rem;
-    width: 100%;
-    padding: 0.5rem;
-    background-color: #f44336;
-    border: none;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-}
+.panel-header { padding: 1rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+.panel-body { padding: 1rem; }
+.info-row { display: flex; justify-content: space-between; margin-bottom: 0.8rem; }
+.info-row .label { color: #94a3b8; }
+.info-row .val { font-weight: bold; }
+.val.highlight { color: #3b82f6; }
+
+.close-btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.2rem; }
+
+.animate-slide-in { animation: slideIn 0.3s ease-out; }
+@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 </style>

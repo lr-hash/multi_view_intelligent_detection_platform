@@ -12,13 +12,14 @@
 - **状态管理**：Pinia - Vue 官方推荐的轻量级状态管理。
 - **路由**：Vue Router - 处理单页面应用跳转。
 - **3D 渲染引擎**：[Three.js](https://threejs.org/) - 用于钻孔轨迹、巷道及压裂场景的 3D 可视化。
-- **图表库**：Chart.js - 用于矿压趋势与微震能量等数据的 2D 图表展示。
+- **图表库**：Chart.js (配合 chartjs-plugin-annotation) - 用于矿压趋势与微震能量等数据的 2D 图表展示，支持阈值标注。
 
 ## 3. 数据库 (Database)
 - **主数据库**：[PostgreSQL](https://www.postgresql.org/) - 开发环境与生产环境均统一使用，确保强一致性与空间数据处理能力。
 
 ## 4. 通信与协议 (Communication)
 - **API 风格**：RESTful API - 前后端交互的标准模式。
+- **跨域处理**：Flask-CORS - 解决开发环境下的跨域资源共享问题。
 - **实时通信**：WebSocket - 用于秒级异常报警的即时推送。
 - **HTTP 客户端**：Axios - 前端请求处理。
 

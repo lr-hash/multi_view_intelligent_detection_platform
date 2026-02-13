@@ -11,10 +11,8 @@ class WebSocketService {
 
     const token = localStorage.getItem('token');
     
-    // Connect to the backend
-    // Since we are using Vite proxy, we can connect to the same origin
-    this.socket = io('/', {
-      transports: ['websocket'],
+    // Connect directly to backend to bypass proxy issues
+    this.socket = io('http://127.0.0.1:5000', {
       auth: {
         token: token
       },

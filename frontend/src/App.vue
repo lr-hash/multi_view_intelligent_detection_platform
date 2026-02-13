@@ -41,6 +41,7 @@ onMounted(() => {
         <RouterLink to="/">主页</RouterLink>
         <RouterLink to="/dashboard">数据看板</RouterLink>
         <RouterLink to="/visualize">压裂设计可视化</RouterLink>
+        <RouterLink :to="{ name: 'evaluation-report', params: { boreholeId: 1 }}">压裂效果评价</RouterLink>
         <RouterLink to="/interface-status">接口状态</RouterLink>
         <RouterLink to="/interface-logs">接口日志</RouterLink>
         <RouterLink to="/alarm-history">报警历史</RouterLink>

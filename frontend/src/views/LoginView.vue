@@ -26,7 +26,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 
 const username = ref('admin');
-const password = ref('123456');
+const password = ref('admin123');
 const errorMessage = ref('');
 const router = useRouter();
 const authStore = useAuthStore();

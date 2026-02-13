@@ -21,6 +21,13 @@ def get_borehole_fracture_data(current_user, borehole_id):
     data = visualization_service.get_borehole_fracture_data(borehole_id)
     return jsonify(data)
 
+@bp.route('/visualization/microseismic-points', methods=['GET'])
+@token_required
+def get_microseismic_points(current_user):
+    """ 获取微震事件 3D 点数据 """
+    data = visualization_service.get_microseismic_points()
+    return jsonify(data)
+
 @bp.route('/dashboard/core_metrics', methods=['GET'])
 @token_required
 def get_dashboard_metrics(current_user):

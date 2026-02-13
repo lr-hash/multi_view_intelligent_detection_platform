@@ -45,19 +45,19 @@
       <div class="chart-container">
         <h3 class="chart-title">矿压实时趋势</h3>
         <div class="canvas-wrapper">
-          <Line v-if="pressureChartData.datasets.length" :data="pressureChartData" :options="chartOptions" />
+          <Line v-if="pressureChartData.datasets.length" :data="pressureChartData" :options="pressureOptions" />
         </div>
       </div>
       <div class="chart-container">
         <h3 class="chart-title">微震频次分布</h3>
         <div class="canvas-wrapper">
-          <Bar v-if="frequencyChartData.datasets.length" :data="frequencyChartData" :options="chartOptions" />
+          <Bar v-if="frequencyChartData.datasets.length" :data="frequencyChartData" :options="frequencyOptions" />
         </div>
       </div>
       <div class="chart-container full-width">
         <h3 class="chart-title">巷道变形演化速率</h3>
         <div class="canvas-wrapper">
-          <Line v-if="deformationChartData.datasets.length" :data="deformationChartData" :options="chartOptions" />
+          <Line v-if="deformationChartData.datasets.length" :data="deformationChartData" :options="deformationOptions" />
         </div>
       </div>
     </div>
@@ -65,13 +65,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import api from '@/services/api';
 import MetricCard from '@/components/MetricCard.vue';
 import { Line, Bar } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from 'chart.js';
+import annotationPlugin from 'chartjs-plugin-annotation';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, annotationPlugin);
 
 // --- State ---
 const timeRange = ref('24h');
@@ -82,34 +83,104 @@ const metrics = reactive({
   alarms: 'N/A'
 });
 
+const thresholds = reactive({
+  pressure: { yellow: 35, red: 45 },
+  deformation: { yellow: 8, red: 15 },
+  seismic: { yellow: 50000, red: 100000 }
+});
+
 const pressureChartData = reactive({ labels: [], datasets: [] });
 const frequencyChartData = reactive({ labels: [], datasets: [] });
 const deformationChartData = reactive({ labels: [], datasets: [] });
 
 let autoRefreshId;
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  scales: {
-    y: { grid: { color: '#2a3f78' }, ticks: { color: '#c0c5d6' } },
-    x: { grid: { display: false }, ticks: { color: '#c0c5d6' } }
-  },
-  plugins: {
-    legend: { position: 'top', labels: { color: '#c0c5d6', boxWidth: 12 } }
+// --- Chart Options Factories ---
+const createBaseOptions = (unit, thresholdKey = null) => {
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: { 
+        grid: { color: '#2a3f78' }, 
+        ticks: { color: '#c0c5d6' },
+        title: {
+          display: true,
+          text: `单位: ${unit}`,
+          color: '#8fa3cf',
+          font: { size: 12 }
+        }
+      },
+      x: { grid: { display: false }, ticks: { color: '#c0c5d6' } }
+    },
+    plugins: {
+      legend: { position: 'top', labels: { color: '#c0c5d6', boxWidth: 12 } },
+      annotation: {
+        annotations: {}
+      }
+    }
+  };
+
+  if (thresholdKey && thresholds[thresholdKey]) {
+    options.plugins.annotation.annotations = {
+      yellowLine: {
+        type: 'line',
+        yMin: thresholds[thresholdKey].yellow,
+        yMax: thresholds[thresholdKey].yellow,
+        borderColor: 'rgba(255, 193, 7, 0.8)',
+        borderWidth: 2,
+        borderDash: [6, 6],
+        label: {
+          display: true,
+          content: `警告: ${thresholds[thresholdKey].yellow}${unit}`,
+          position: 'end',
+          backgroundColor: 'rgba(255, 193, 7, 0.8)',
+          color: '#000',
+          font: { size: 10 }
+        }
+      },
+      redLine: {
+        type: 'line',
+        yMin: thresholds[thresholdKey].red,
+        yMax: thresholds[thresholdKey].red,
+        borderColor: 'rgba(220, 53, 69, 0.8)',
+        borderWidth: 2,
+        label: {
+          display: true,
+          content: `异常: ${thresholds[thresholdKey].red}${unit}`,
+          position: 'end',
+          backgroundColor: 'rgba(220, 53, 69, 0.8)',
+          color: '#fff',
+          font: { size: 10 }
+        }
+      }
+    };
   }
+  return options;
 };
+
+const pressureOptions = computed(() => createBaseOptions('MPa', 'pressure'));
+const frequencyOptions = computed(() => createBaseOptions('次', null)); // Frequency usually doesn't have fixed safety thresholds in same way
+const deformationOptions = computed(() => createBaseOptions('mm/d', 'deformation'));
 
 // --- Methods ---
 async function fetchAllData() {
   try {
-    const [metricsRes, pressureRes, freqRes, deformRes] = await Promise.all([
+    const [metricsRes, pressureRes, freqRes, deformRes, alarmConfigRes] = await Promise.all([
       api.getDashboardCoreMetrics(),
       api.getPressureTrendData(timeRange.value),
       api.getMicroseismicFrequency(timeRange.value),
-      api.getDeformationTrend(timeRange.value)
+      api.getDeformationTrend(timeRange.value),
+      api.getAlarmConfig()
     ]);
     
+    // Update thresholds from server
+    if (alarmConfigRes.data) {
+      Object.assign(thresholds.pressure, alarmConfigRes.data.pressure);
+      Object.assign(thresholds.deformation, alarmConfigRes.data.deformation);
+      Object.assign(thresholds.seismic, alarmConfigRes.data.seismic);
+    }
+
     // Update numerical metrics
     metrics.pressure = metricsRes.data.strata_pressure.current_val;
     metrics.microseismic = metricsRes.data.microseismic.latest_energy;
