@@ -8,13 +8,12 @@ from datetime import datetime
 from app.models import User, AlarmRecord
 from app.services import auxiliary_service
 
-# --- Background Simulation ---
-def simulate_periodic_alarms(app):
-    """每隔几分钟模拟产生一个报警"""
+# --- Session-based Alarm Simulation ---
+def simulate_session_alarms(app, sid):
+    """为特定会话模拟产生 5 次报警，每 30 秒一次"""
     with app.app_context():
-        print("SIMULATION TASK: Started.")
-        while True:
-            # 缩短等待时间至 30s 方便快速验证
+        print(f"SIMULATION: Starting session-based task for SID {sid}")
+        for i in range(5):
             socketio.sleep(30)
             
             # 随机选择一种类型产生报警
@@ -28,30 +27,26 @@ def simulate_periodic_alarms(app):
             # 产生一个超限数值 (1.1x ~ 1.3x 阈值)
             mock_value = round(threshold_red * (1.1 + random.random() * 0.2), 2)
             
-            # 触发报警逻辑
+            # 1. 记录到数据库并发送给该用户
             success, level = auxiliary_service.check_and_trigger_alarms(
-                data_type, mock_value, threshold_red, threshold_red * 0.8
+                data_type, mock_value, threshold_red, threshold_red * 0.8, sid=sid
             )
             
             if success:
-                print(f"SIMULATION TASK: SUCCESS - {data_type} alarm pushed.")
-
-# 在应用启动后手动启动模拟线程
-# 注意：在生产环境或多进程模式下(如 gunicorn)需谨慎处理，此处仅用于开发模拟
-_sim_task_started = False
+                print(f"SIMULATION: Alarm {i+1}/5 sent to SID {sid}")
+        
+        print(f"SIMULATION: Completed 5 alarms for SID {sid}")
 
 @socketio.on('connect')
 def handle_connect(auth=None):
     """
-    处理 WebSocket 连接事件，进行身份验证。
+    处理 WebSocket 连接事件，进行身份验证并启动模拟任务。
     """
-    print("\n\n!!! SOCKET CONNECTED !!!\n\n")
-    global _sim_task_started
-    if not _sim_task_started:
-        # Start simulation regardless of auth success for demo purposes
-        socketio.start_background_task(simulate_periodic_alarms, current_app._get_current_object())
-        _sim_task_started = True
-        print("ALARM SIMULATION: Task started on first connection attempt.")
+    sid = request.sid
+    print(f"\n\n!!! SOCKET CONNECTED: {sid} !!!\n\n")
+    
+    # 每次新连接都启动一个独立的 5 次报警任务
+    socketio.start_background_task(simulate_session_alarms, current_app._get_current_object(), sid)
 
     token = None
     

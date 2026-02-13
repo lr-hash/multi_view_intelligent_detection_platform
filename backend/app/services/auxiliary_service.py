@@ -31,9 +31,10 @@ def get_all_configs():
     configs = SystemConfig.query.all()
     return {c.config_key: c.config_value for c in configs}
 
-def check_and_trigger_alarms(data_type, value, threshold_red, threshold_yellow):
+def check_and_trigger_alarms(data_type, value, threshold_red, threshold_yellow, sid=None):
     """
     检查数值是否超过阈值，并触发报警记录。
+    如果提供了 sid，则仅向该会话发送；否则全局广播。
     """
     level = None
     msg = ""
@@ -68,7 +69,11 @@ def check_and_trigger_alarms(data_type, value, threshold_red, threshold_yellow):
                 "threshold": alarm.threshold,
                 "message": alarm.message
             }
-            socketio.emit('new_alarm', alarm_data)
+            
+            if sid:
+                socketio.emit('new_alarm', alarm_data, to=sid)
+            else:
+                socketio.emit('new_alarm', alarm_data)
             
             return True, level
         except Exception as e:

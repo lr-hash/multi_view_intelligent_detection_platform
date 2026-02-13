@@ -35,6 +35,13 @@ def get_dashboard_metrics(current_user):
     data = visualization_service.get_dashboard_core_metrics()
     return jsonify(data)
 
+@bp.route('/dashboard/fusion_score', methods=['GET'])
+@token_required
+def get_dashboard_fusion_score(current_user):
+    """ 获取实时融合稳定指数 """
+    data = visualization_service.get_realtime_fusion_score()
+    return jsonify(data)
+
 @bp.route('/trends/pressure', methods=['GET'])
 @token_required
 def get_pressure_trends(current_user):

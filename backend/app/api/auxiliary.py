@@ -43,6 +43,43 @@ def get_alarm_history(current_user):
     data = auxiliary_service.get_alarm_history(limit)
     return jsonify(data)
 
+@bp.route('/alarms/bulk-delete', methods=['POST'])
+@token_required
+def bulk_delete_alarms(current_user):
+    if current_user.role != 'ADMIN':
+        return jsonify({'message': 'Permission denied'}), 403
+    
+    data = request.get_json()
+    ids = data.get('ids', [])
+    if not ids:
+        return jsonify({'message': 'No IDs provided'}), 400
+        
+    from app import db
+    from app.models import AlarmRecord
+    try:
+        AlarmRecord.query.filter(AlarmRecord.id.in_(ids)).delete(synchronize_session=False)
+        db.session.commit()
+        return jsonify({'message': 'Alarms deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 400
+
+@bp.route('/alarms/clear-all', methods=['POST'])
+@token_required
+def clear_all_alarms(current_user):
+    if current_user.role != 'ADMIN':
+        return jsonify({'message': 'Permission denied'}), 403
+        
+    from app import db
+    from app.models import AlarmRecord
+    try:
+        AlarmRecord.query.delete()
+        db.session.commit()
+        return jsonify({'message': 'All alarms cleared successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 400
+
 @bp.route('/query', methods=['POST'])
 @token_required
 def query_data_endpoint(current_user):

@@ -15,6 +15,11 @@
 
     <!-- 核心指标栅格 -->
     <div class="metrics-grid">
+      <!-- 综合稳定指数 (融合算法体现) -->
+      <div class="metric-card gauge-card">
+        <stability-gauge :score="fusionData.score" :level="fusionData.level" />
+      </div>
+
       <metric-card title="支架平均阻力" :value="metrics.pressure" unit="MPa" type="pressure">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -30,12 +35,6 @@
       <metric-card title="巷道累计位移" :value="metrics.deformation" unit="mm" type="deformation">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" /></svg>
-        </template>
-      </metric-card>
-
-      <metric-card title="今日报警次数" :value="metrics.alarms" type="alarms">
-        <template #icon>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
         </template>
       </metric-card>
     </div>
@@ -68,6 +67,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import api from '@/services/api';
 import MetricCard from '@/components/MetricCard.vue';
+import StabilityGauge from '@/components/StabilityGauge.vue';
 import { Line, Bar } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
@@ -81,6 +81,11 @@ const metrics = reactive({
   microseismic: 'N/A',
   deformation: 'N/A',
   alarms: 'N/A'
+});
+
+const fusionData = reactive({
+  score: 100,
+  level: 'Green'
 });
 
 const thresholds = reactive({
@@ -166,14 +171,19 @@ const deformationOptions = computed(() => createBaseOptions('mm/d', 'deformation
 // --- Methods ---
 async function fetchAllData() {
   try {
-    const [metricsRes, pressureRes, freqRes, deformRes, alarmConfigRes] = await Promise.all([
+    const [metricsRes, pressureRes, freqRes, deformRes, alarmConfigRes, fusionRes] = await Promise.all([
       api.getDashboardCoreMetrics(),
       api.getPressureTrendData(timeRange.value),
       api.getMicroseismicFrequency(timeRange.value),
       api.getDeformationTrend(timeRange.value),
-      api.getAlarmConfig()
+      api.getAlarmConfig(),
+      api.getDashboardFusionScore()
     ]);
     
+    // Update fusion data
+    fusionData.score = fusionRes.data.stability_score;
+    fusionData.level = fusionRes.data.risk_level;
+
     // Update thresholds from server
     if (alarmConfigRes.data) {
       Object.assign(thresholds.pressure, alarmConfigRes.data.pressure);
@@ -246,7 +256,7 @@ onUnmounted(() => {
 <style scoped>
 .dashboard {
   padding: 1rem;
-  color: #fff;
+  color: var(--color-text-main);
 }
 
 .dashboard-header {
@@ -254,7 +264,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  border-bottom: 1px solid #2a3f78;
+  border-bottom: 1px solid var(--color-border);
   padding-bottom: 1rem;
 }
 
@@ -262,6 +272,7 @@ onUnmounted(() => {
   margin: 0;
   font-weight: 600;
   letter-spacing: 1px;
+  font-size: 1.5rem;
 }
 
 .controls {
@@ -270,25 +281,28 @@ onUnmounted(() => {
 }
 
 .range-selector {
-  background-color: #1a2952;
-  color: #fff;
-  border: 1px solid #2a3f78;
+  background-color: var(--color-bg-panel);
+  color: var(--color-text-main);
+  border: 1px solid var(--color-border);
   padding: 0.4rem 1rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   outline: none;
 }
 
 .refresh-btn {
-  background-color: #2a3f78;
-  color: #fff;
-  border: none;
+  background-color: rgba(59, 130, 246, 0.2);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
   padding: 0.4rem 1.2rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: all 0.3s;
 }
 
 .refresh-btn:hover {
-  background-color: #3a4f98;
+  background-color: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 0 10px var(--color-primary-glow);
 }
 
 .metrics-grid {
@@ -298,6 +312,11 @@ onUnmounted(() => {
   margin-bottom: 2rem;
 }
 
+.gauge-card {
+  padding: 0.5rem !important;
+  justify-content: center;
+}
+
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -305,12 +324,14 @@ onUnmounted(() => {
 }
 
 .chart-container {
-  background-color: #1a2952;
-  border: 1px solid #2a3f78;
-  border-radius: 8px;
+  background-color: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  height: 400px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .chart-container.full-width {
@@ -321,68 +342,11 @@ onUnmounted(() => {
   margin: 0 0 1.5rem 0;
   font-size: 1.1rem;
   font-weight: 500;
-  color: #c0c5d6;
+  color: var(--color-text-muted);
 }
 
 .canvas-wrapper {
   flex-grow: 1;
   min-height: 300px;
-}
-</style>
-
-<style scoped>
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-.metric-card {
-  background-color: #1a2952;
-  border: 1px solid #2a3f78;
-  border-radius: 8px;
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.icon-wrapper {
-  flex-shrink: 0;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 1.5rem;
-}
-.icon-wrapper svg { width: 28px; height: 28px; color: #fff; }
-.pressure { background-color: #007bff; }
-.microseismic { background-color: #ffc107; }
-.deformation { background-color: #28a745; }
-.alarms { background-color: #dc3545; }
-.text-wrapper h3 { margin: 0 0 0.5rem 0; color: #c0c5d6; font-size: 1rem; font-weight: 400; }
-.text-wrapper .value { font-size: 1.8rem; font-weight: bold; color: #fff; margin: 0; }
-.text-wrapper .value span { font-size: 1rem; color: #c0c5d6; margin-left: 0.25rem; }
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-
-.chart-container {
-  background-color: #1a2952;
-  border: 1px solid #2a3f78;
-  border-radius: 8px;
-  padding: 1.5rem;
-  height: 400px;
-}
-.chart-container.full-width {
-  grid-column: 1 / -1;
-}
-
-.chart-container h3 {
-  margin-bottom: 1.5rem;
 }
 </style>

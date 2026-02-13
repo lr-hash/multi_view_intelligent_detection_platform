@@ -1,3 +1,4 @@
+from app import db
 from app.models import DrillingSite, Borehole, BoreholeTrajectory, FractureConstructionData, MicroseismicEvent
 import random
 from datetime import datetime, timedelta
@@ -131,3 +132,22 @@ def get_deformation_trend_data(time_range):
             data_points.append(round(base_deformation, 2))
         datasets.append({"label": station, "data": data_points})
     return {"labels": labels, "datasets": datasets}
+
+def get_realtime_fusion_score():
+    """获取实时的多源数据融合评分"""
+    from app.services.processing_service import fuse_data
+    from app.models import SupportPressureData, MicroseismicEvent, RoadwayDeformation
+    
+    # 1. 获取最新矿压 (P1 均值)
+    latest_p = db.session.query(db.func.avg(SupportPressureData.p1)).limit(1).scalar() or 32.0
+    
+    # 2. 获取最新微震能量
+    latest_ms = MicroseismicEvent.query.order_by(MicroseismicEvent.event_time.desc()).first()
+    ms_energy = latest_ms.energy if latest_ms else 5000.0
+    
+    # 3. 获取最新变形速率
+    latest_def = RoadwayDeformation.query.order_by(RoadwayDeformation.record_time.desc()).first()
+    def_rate = latest_def.deformation_rate if latest_def else 1.2
+    
+    # 执行融合
+    return fuse_data(latest_p, ms_energy, def_rate)

@@ -61,6 +61,11 @@ const router = createRouter({
       path: '/data-management',
       name: 'data-management',
       component: () => import('../views/DataManagementView.vue')
+    },
+    {
+      path: '/user-management',
+      name: 'user-management',
+      component: () => import('../views/UserManagementView.vue')
     }
   ]
 })

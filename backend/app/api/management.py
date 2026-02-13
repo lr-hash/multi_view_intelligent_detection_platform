@@ -189,6 +189,30 @@ def delete_data(current_user, table_name, id):
         db.session.rollback()
         return jsonify({'message': str(e)}), 400
 
+@bp.route('/management/bulk-delete/<table_name>', methods=['POST'])
+@token_required
+def bulk_delete_data(current_user, table_name):
+    if current_user.role != 'ADMIN':
+        return jsonify({'message': 'Permission denied'}), 403
+    
+    model = MODEL_MAP.get(table_name)
+    if not model:
+        return jsonify({'message': 'Invalid table name'}), 404
+    
+    data = request.get_json()
+    ids = data.get('ids', [])
+    
+    if not ids:
+        return jsonify({'message': 'No IDs provided'}), 400
+        
+    try:
+        model.query.filter(model.id.in_(ids)).delete(synchronize_session=False)
+        db.session.commit()
+        return jsonify({'message': f'Successfully deleted {len(ids)} items'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 400
+
 @bp.route('/management/tables', methods=['GET'])
 @token_required
 def get_manageable_tables(current_user):

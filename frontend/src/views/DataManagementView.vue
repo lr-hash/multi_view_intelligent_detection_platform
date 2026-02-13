@@ -3,6 +3,7 @@
     <div class="management-header">
       <h2 class="title">数据管理中心</h2>
       <div class="controls" v-if="authStore.user?.role === 'ADMIN'">
+        <button v-if="selectedIds.length > 0" @click="confirmBulkDelete" class="btn btn-danger">批量删除 ({{ selectedIds.length }})</button>
         <button @click="openImportModal" class="btn btn-secondary">批量导入</button>
         <button @click="openAddModal" class="btn btn-primary">手动新增</button>
       </div>
@@ -39,12 +40,18 @@
             <table>
               <thead>
                 <tr>
+                  <th v-if="authStore.user?.role === 'ADMIN'" class="checkbox-col">
+                    <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
+                  </th>
                   <th v-for="col in displayColumns" :key="col.name">{{ col.comment || col.name }}</th>
                   <th v-if="authStore.user?.role === 'ADMIN'" class="actions-col">操作</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in dataItems" :key="item.id">
+                <tr v-for="item in dataItems" :key="item.id" :class="{ selected: selectedIds.includes(item.id) }">
+                  <td v-if="authStore.user?.role === 'ADMIN'" class="checkbox-cell">
+                    <input type="checkbox" :value="item.id" v-model="selectedIds" />
+                  </td>
                   <td v-for="col in displayColumns" :key="col.name">
                     {{ formatValue(item[col.name], col.type) }}
                   </td>
@@ -58,7 +65,7 @@
                   </td>
                 </tr>
                 <tr v-if="dataItems.length === 0">
-                  <td :colspan="displayColumns.length + 1" class="text-center">暂无数据</td>
+                  <td :colspan="displayColumns.length + 2" class="text-center">暂无数据</td>
                 </tr>
               </tbody>
             </table>
@@ -168,8 +175,15 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import api from '@/services/api';
+import axios from 'axios';
 
 const authStore = useAuthStore();
+const axios_instance = axios.create({ baseURL: '/api/v1' });
+axios_instance.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 // --- State ---
 const tables = ref([]);
@@ -179,6 +193,7 @@ const totalItems = ref(0);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const searchQuery = ref('');
+const selectedIds = ref([]);
 
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -200,6 +215,10 @@ const editableColumns = computed(() => {
   return selectedTable.value.columns.filter(c => !c.primary_key && !['updated_at'].includes(c.name));
 });
 
+const isAllSelected = computed(() => {
+  return dataItems.value.length > 0 && selectedIds.value.length === dataItems.value.length;
+});
+
 // --- Methods ---
 async function fetchTables() {
   try {
@@ -217,6 +236,7 @@ function selectTable(table) {
   selectedTable.value = table;
   currentPage.value = 1;
   searchQuery.value = '';
+  selectedIds.value = [];
   fetchData();
 }
 
@@ -239,8 +259,28 @@ async function fetchData() {
     dataItems.value = res.data.items;
     totalItems.value = res.data.total;
     totalPages.value = res.data.pages;
+    selectedIds.value = [];
   } catch (err) {
     console.error('获取数据失败:', err);
+  }
+}
+
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedIds.value = [];
+  } else {
+    selectedIds.value = dataItems.value.map(item => item.id);
+  }
+}
+
+async function confirmBulkDelete() {
+  if (confirm(`确定要删除选中的 ${selectedIds.value.length} 条记录吗? 此操作不可撤销。`)) {
+    try {
+      await axios_instance.post(`/management/bulk-delete/${selectedTable.value.name}`, { ids: selectedIds.value });
+      fetchData();
+    } catch (err) {
+      alert('批量删除失败: ' + (err.response?.data?.message || err.message));
+    }
   }
 }
 
@@ -272,7 +312,6 @@ function getInputType(dbType) {
 // CRUD Operations
 function openAddModal() {
   isEditing.value = false;
-  // Clear formModel
   Object.keys(formModel).forEach(key => delete formModel[key]);
   editableColumns.value.forEach(col => {
     formModel[col.name] = null;
@@ -372,7 +411,7 @@ onMounted(fetchTables);
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #2a3f78;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .title { margin: 0; font-weight: 600; }
@@ -387,9 +426,9 @@ onMounted(fetchTables);
 /* Sidebar */
 .table-sidebar {
   width: 240px;
-  background-color: #1a2952;
-  border: 1px solid #2a3f78;
-  border-radius: 8px;
+  background-color: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
 }
@@ -397,8 +436,8 @@ onMounted(fetchTables);
 .sidebar-title {
   padding: 1rem;
   font-weight: bold;
-  border-bottom: 1px solid #2a3f78;
-  color: #c0c5d6;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
 }
 
 .table-list {
@@ -411,26 +450,26 @@ onMounted(fetchTables);
 .table-list li {
   padding: 0.75rem 1.5rem;
   cursor: pointer;
-  color: #c0c5d6;
+  color: var(--color-text-muted);
   transition: all 0.2s;
 }
 
 .table-list li:hover {
-  background-color: #2a3f78;
+  background-color: rgba(255,255,255,0.05);
   color: #fff;
 }
 
 .table-list li.active {
-  background-color: #007bff;
+  background-color: var(--color-primary);
   color: #fff;
 }
 
 /* Content */
 .table-content {
   flex-grow: 1;
-  background-color: #1a2952;
-  border: 1px solid #2a3f78;
-  border-radius: 8px;
+  background-color: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -454,11 +493,11 @@ onMounted(fetchTables);
 
 .search-box { display: flex; gap: 0.5rem; }
 .search-box input {
-  background-color: #0f172a;
-  border: 1px solid #2a3f78;
+  background-color: var(--color-bg-deep);
+  border: 1px solid var(--color-border);
   color: #fff;
   padding: 0.4rem 0.8rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   width: 250px;
 }
 
@@ -466,8 +505,8 @@ onMounted(fetchTables);
 .table-container {
   flex-grow: 1;
   overflow-y: auto;
-  border: 1px solid #2a3f78;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   margin-bottom: 1rem;
 }
 
@@ -477,71 +516,75 @@ table {
 }
 
 th {
-  background-color: #2a3f78;
-  color: #c0c5d6;
+  background-color: rgba(255,255,255,0.05);
+  color: var(--color-text-muted);
   text-align: left;
   padding: 0.75rem;
   position: sticky;
   top: 0;
+  font-size: 0.9rem;
 }
 
 td {
   padding: 0.75rem;
-  border-bottom: 1px solid #2a3f78;
-  color: #f1f5f9;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-main);
 }
 
-tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
+tr:hover td { background-color: rgba(255, 255, 255, 0.03); }
+tr.selected td { background-color: rgba(59, 130, 246, 0.1); }
 
+.checkbox-col, .checkbox-cell { width: 40px; text-align: center; }
 .actions-col { width: 100px; text-align: center; }
 .actions-cell { text-align: center; display: flex; justify-content: center; gap: 0.5rem; }
 
 /* Buttons */
 .btn {
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   border: none;
   font-weight: 500;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 }
 
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.btn-primary { background-color: #007bff; color: #fff; }
-.btn-secondary { background-color: #6c757d; color: #fff; }
-.btn-cancel { background-color: #2a3f78; color: #fff; }
-.btn-search { background-color: #2a3f78; color: #fff; }
+.btn-primary { background-color: var(--color-primary); color: #fff; }
+.btn-secondary { background-color: #334155; color: #fff; }
+.btn-danger { background-color: var(--color-danger); color: #fff; }
+.btn-cancel { background-color: #334155; color: #fff; }
+.btn-search { background-color: #334155; color: #fff; }
 
 .btn-icon {
   background: none;
   border: none;
-  color: #c0c5d6;
+  color: var(--color-text-muted);
   cursor: pointer;
   padding: 4px;
   display: flex;
   align-items: center;
 }
 
-.edit-btn:hover { color: #007bff; }
-.delete-btn:hover { color: #dc3545; }
+.edit-btn:hover { color: var(--color-primary); }
+.delete-btn:hover { color: var(--color-danger); }
 
 /* Pagination */
 .pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #c0c5d6;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
 }
 
 .page-controls { display: flex; align-items: center; gap: 1rem; }
 .page-controls button {
-  background-color: #2a3f78;
+  background-color: var(--color-bg-deep);
   color: #fff;
-  border: none;
+  border: 1px solid var(--color-border);
   padding: 0.3rem 0.6rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .page-controls button:disabled { opacity: 0.5; }
@@ -549,21 +592,17 @@ tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
 /* Modal */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex; align-items: center; justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
 .modal-content {
-  background-color: #1a2952;
-  border: 1px solid #2a3f78;
-  border-radius: 8px;
+  background-color: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   width: 500px;
   max-width: 90vw;
   max-height: 90vh;
@@ -572,40 +611,37 @@ tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
 }
 
 .modal-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #2a3f78;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex; justify-content: space-between; align-items: center;
 }
 
-.modal-header h3 { margin: 0; }
-.close-btn { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+.modal-header h3 { margin: 0; color: var(--color-text-main); }
+.close-btn { background: none; border: none; color: var(--color-text-muted); font-size: 1.5rem; cursor: pointer; }
 
 .modal-body { padding: 1.5rem; overflow-y: auto; }
 
-.form-group { margin-bottom: 1rem; }
-.form-group label { display: block; margin-bottom: 0.4rem; color: #c0c5d6; }
+.form-group { margin-bottom: 1.2rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; color: var(--color-text-muted); font-size: 0.9rem; }
 .form-input {
   width: 100%;
-  background-color: #0f172a;
-  border: 1px solid #2a3f78;
+  background-color: var(--color-bg-deep);
+  border: 1px solid var(--color-border);
   color: #fff;
-  padding: 0.6rem;
-  border-radius: 4px;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
   outline: none;
 }
-.required { color: #dc3545; }
+.form-input:focus { border-color: var(--color-primary); }
+.required { color: var(--color-danger); }
 
 .form-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; }
 
 /* Import specific */
-.import-instructions { margin-bottom: 1.5rem; color: #c0c5d6; }
+.import-instructions { margin-bottom: 1.5rem; color: var(--color-text-muted); font-size: 0.9rem; }
 .file-upload { margin-bottom: 1.5rem; }
-.import-results { margin-top: 1rem; padding: 1rem; background-color: #0f172a; border-radius: 4px; }
-.success { color: #28a745; }
-.error { color: #dc3545; }
-.error-list { font-size: 0.85rem; margin-top: 0.5rem; }
-.text-muted { color: #888; font-size: 0.8rem; }
-.text-center { text-align: center; color: #c0c5d6; padding: 2rem; }
+.import-results { margin-top: 1rem; padding: 1rem; background-color: var(--color-bg-deep); border-radius: var(--radius-sm); }
+.success { color: var(--color-success); }
+.error { color: var(--color-danger); }
+.text-center { text-align: center; color: var(--color-text-muted); padding: 2rem; }
 </style>

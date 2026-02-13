@@ -53,7 +53,83 @@ def login():
     return jsonify({
         'token': token,
         'user': {
+            'id': user.id,
             'username': user.username,
             'role': user.role
         }
     })
+
+# --- User Management APIs (Admin Only) ---
+
+@bp.route('/auth/users', methods=['GET'])
+@token_required
+def get_users(current_user):
+    if current_user.role != 'ADMIN':
+        return jsonify({'message': 'Admin privilege required!'}), 403
+    
+    users = User.query.all()
+    return jsonify([{
+        'id': u.id,
+        'username': u.username,
+        'role': u.role
+    } for u in users])
+
+@bp.route('/auth/users', methods=['POST'])
+@token_required
+def create_user(current_user):
+    if current_user.role != 'ADMIN':
+        return jsonify({'message': 'Admin privilege required!'}), 403
+    
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    role = data.get('role', 'USER')
+
+    if not username or not password:
+        return jsonify({'message': 'Username and password are required'}), 400
+    
+    if User.query.filter_by(username=username).first():
+        return jsonify({'message': 'User already exists'}), 400
+    
+    new_user = User(username=username, role=role)
+    new_user.set_password(password)
+    from app import db
+    db.session.add(new_user)
+    db.session.commit()
+    
+    return jsonify({'message': 'User created successfully', 'id': new_user.id}), 201
+
+@bp.route('/auth/users/<int:user_id>', methods=['PUT'])
+@token_required
+def update_user(current_user, user_id):
+    if current_user.role != 'ADMIN':
+        return jsonify({'message': 'Admin privilege required!'}), 403
+    
+    user = User.query.get_or_404(user_id)
+    data = request.get_json()
+    
+    if 'username' in data:
+        user.username = data['username']
+    if 'role' in data:
+        user.role = data['role']
+    if 'password' in data and data['password']:
+        user.set_password(data['password'])
+        
+    from app import db
+    db.session.commit()
+    return jsonify({'message': 'User updated successfully'})
+
+@bp.route('/auth/users/<int:user_id>', methods=['DELETE'])
+@token_required
+def delete_user(current_user, user_id):
+    if current_user.role != 'ADMIN':
+        return jsonify({'message': 'Admin privilege required!'}), 403
+    
+    if current_user.id == user_id:
+        return jsonify({'message': 'Cannot delete yourself!'}), 400
+        
+    user = User.query.get_or_404(user_id)
+    from app import db
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'message': 'User deleted successfully'})

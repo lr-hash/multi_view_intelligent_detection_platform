@@ -45,6 +45,9 @@ const api = {
   getDashboardCoreMetrics() {
     return apiClient.get('/dashboard/core_metrics');
   },
+  getDashboardFusionScore() {
+    return apiClient.get('/dashboard/fusion_score');
+  },
   getDrillingDesign() {
     return apiClient.get('/visualize/drilling_design');
   },
@@ -98,6 +101,9 @@ const api = {
   },
   deleteData(tableName, id) {
     return apiClient.delete(`/management/${tableName}/${id}`);
+  },
+  bulkDeleteData(tableName, ids) {
+    return apiClient.post(`/management/bulk-delete/${tableName}`, { ids });
   },
   importData(tableName, file) {
     const formData = new FormData();
