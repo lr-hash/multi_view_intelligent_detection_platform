@@ -11,8 +11,10 @@ class WebSocketService {
 
     const token = localStorage.getItem('token');
     
-    // Connect directly to backend to bypass proxy issues
-    this.socket = io('http://127.0.0.1:5000', {
+    // Connect directly to backend using current hostname and port 5005
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    this.socket = io(`${protocol}//${hostname}:5005`, {
       auth: {
         token: token
       },
